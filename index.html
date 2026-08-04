@@ -88,6 +88,12 @@ ul,ol{margin:0;padding:0;list-style:none;}
 section{position:relative;background:var(--bg);color:var(--fg);}
 .shell{padding-inline:var(--gutter);}
 .section-pad{padding-block:var(--section-y);}
+/* Past roughly 1700px the gutter absorbs the extra width instead of the content,
+   so text measures and index rows stay composed on very wide displays while
+   section backgrounds stay full bleed. */
+@media(min-width:1600px){
+  :root{--gutter:max(5vw,calc((100vw - 96rem) / 2));}
+}
 
 .eyebrow{
   font-size:.6875rem;letter-spacing:.26em;text-transform:uppercase;font-weight:400;
@@ -682,7 +688,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .foot__col a:hover{color:var(--fg);}
 .foot__word{
   font-family:var(--serif);line-height:.8;letter-spacing:-.01em;
-  font-size:clamp(3.4rem,39vw,34rem);padding-block:clamp(1rem,2vw,2rem) 0;
+  font-size:clamp(3.4rem,39vw,43rem);padding-block:clamp(1rem,2vw,2rem) 0;
   color:var(--fg);opacity:.94;white-space:nowrap;
 }
 .foot__bar{
