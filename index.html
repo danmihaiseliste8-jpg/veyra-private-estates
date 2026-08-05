@@ -13,8 +13,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/hero-facade.webp" fetchpriority="high">
-<script>document.documentElement.classList.add('js');</script>
+<script>
+document.documentElement.classList.add('js');
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+</script>
 <noscript><style>#loader{display:none}</style></noscript>
 <style>
 /* ============================================================
@@ -29,8 +32,8 @@
   --bronze-light:#C8A97B;
 
   --fg:#191510;
-  --fg-muted:rgba(25,21,16,.58);
-  --fg-faint:rgba(25,21,16,.34);
+  --fg-muted:rgba(25,21,16,.64);
+  --fg-faint:rgba(25,21,16,.50);
   --bg:var(--ivory);
   --hair:rgba(25,21,16,.16);
   --hair-soft:rgba(25,21,16,.09);
@@ -41,6 +44,7 @@
 
   --gutter:clamp(1.25rem,5vw,6.5rem);
   --section-y:clamp(6rem,13vw,13.5rem);
+  --nav-h:clamp(4.6rem,7vw,6.2rem);
   --measure:34ch;
 
   --ease:cubic-bezier(.16,1,.3,1);
@@ -53,7 +57,7 @@
   --bg:var(--espresso);
   --fg:#F1EBE1;
   --fg-muted:rgba(241,235,225,.56);
-  --fg-faint:rgba(241,235,225,.3);
+  --fg-faint:rgba(241,235,225,.46);
   --hair:rgba(241,235,225,.17);
   --hair-soft:rgba(241,235,225,.09);
   --accent:var(--bronze-light);
@@ -131,10 +135,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .ln{
   position:relative;display:inline-flex;align-items:center;gap:.7em;
   font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg);
-  padding-block:.45em;
+  padding-block:1.05em;
 }
 .ln::after{
-  content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;background:currentColor;
+  content:"";position:absolute;left:0;bottom:.6em;height:1px;width:100%;background:currentColor;
   transform:scaleX(1);transform-origin:right;transition:transform .5s var(--ease);
 }
 .ln:hover::after,.ln:focus-visible::after{transform:scaleX(0);}
@@ -179,8 +183,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .js [data-rv="up"]{transform:translateY(26px);}
 .js .mask-line{overflow:hidden;display:block;}
 .js .mask-line > span{display:block;transform:translateY(105%);}
+.js [data-hero-title]{opacity:0;visibility:hidden;}
+.js #nav{opacity:0;}
 .no-motion [data-rv]{opacity:1 !important;transform:none !important;}
 .no-motion .mask-line > span{transform:none !important;}
+.no-motion [data-hero-title]{opacity:1 !important;visibility:visible !important;}
+.no-motion #nav{opacity:1 !important;}
 
 /* ============================================================
    LOADER
@@ -197,8 +205,13 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 }
 .loader__mark span{display:inline-block;transform:translateY(130%);opacity:0;}
 .loader__mark-wrap{overflow:hidden;padding-block:.12em;}
+/* brand mark — directly above the loading bar */
+.loader__brand{
+  font-family:var(--serif);font-size:.72rem;letter-spacing:.34em;text-indent:.34em;
+  text-transform:uppercase;color:var(--fg);line-height:1;margin:1.8rem 0 .85rem;
+}
 .loader__line{
-  width:min(46vw,320px);height:1px;background:var(--hair);margin:2.2rem auto 1.6rem;
+  width:min(46vw,320px);height:1px;background:var(--hair);margin:0 auto 1.6rem;
   position:relative;overflow:hidden;
 }
 .loader__line i{
@@ -229,7 +242,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .nav__bar{
   display:flex;align-items:center;justify-content:space-between;gap:2rem;
   padding-inline:var(--gutter);
-  height:clamp(4.6rem,7vw,6.2rem);
+  height:var(--nav-h);
   position:relative;
 }
 .nav__bar::after{
@@ -239,7 +252,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .nav.is-solid{background:var(--ivory);color:var(--fg);}
 .nav.is-solid .nav__bar::after{opacity:.14;}
 .nav.is-hidden{transform:translateY(-101%);}
-.nav__brand{display:flex;align-items:baseline;gap:.85rem;}
+.nav__brand{display:flex;align-items:baseline;gap:.85rem;padding-block:.75rem;}
 .nav__word{font-family:var(--serif);font-size:1.32rem;letter-spacing:.26em;text-indent:.26em;line-height:1;}
 .nav__tag{font-size:.58rem;letter-spacing:.24em;text-transform:uppercase;opacity:.6;display:none;}
 @media(min-width:600px){.nav__tag{display:block;}}
@@ -247,10 +260,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 @media(min-width:940px){.nav__links{display:flex;}}
 .nav__link{
   position:relative;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
-  padding-block:.5rem;opacity:.82;transition:opacity .4s var(--ease);
+  padding-block:.8rem;opacity:.82;transition:opacity .4s var(--ease);
 }
 .nav__link::after{
-  content:"";position:absolute;left:0;right:0;bottom:.1rem;height:1px;background:currentColor;
+  content:"";position:absolute;left:0;right:0;bottom:.4rem;height:1px;background:currentColor;
   transform:scaleX(0);transform-origin:left;transition:transform .55s var(--ease);
 }
 .nav__link:hover,.nav__link:focus-visible{opacity:1;}
@@ -258,9 +271,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 /* .ln pins itself to --fg; inside the bar it has to follow the nav's own colour */
 .nav__cta{display:none;color:inherit;}
 @media(min-width:940px){.nav__cta{display:inline-flex;}}
+/* padding carries the 44px tap target while the bars stay optically 2rem wide */
 .nav__toggle{
-  display:flex;flex-direction:column;justify-content:center;gap:6px;width:2rem;height:2rem;
-  margin-right:-.25rem;
+  display:flex;flex-direction:column;justify-content:center;gap:6px;width:2.75rem;height:2.75rem;
+  padding-inline:.375rem;margin-right:-.625rem;
 }
 @media(min-width:940px){.nav__toggle{display:none;}}
 .nav__toggle i{display:block;height:1px;background:currentColor;transition:transform .5s var(--ease),width .5s var(--ease);width:100%;}
@@ -289,36 +303,100 @@ section{position:relative;background:var(--bg);color:var(--fg);}
    HERO
    ============================================================ */
 .hero{
-  position:relative;min-height:100svh;background:var(--espresso);color:#F1EBE1;
+  position:relative;z-index:3;min-height:100svh;background:var(--espresso);color:#F1EBE1;
   display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
-  padding-block:clamp(7rem,12vw,9rem) clamp(2rem,4vw,3.2rem);
+  /* top pad clears the fixed nav so the large title never sits underneath it */
+  padding-block:calc(var(--nav-h) + clamp(2.5rem,5vw,4rem)) clamp(2rem,4vw,3.2rem);
 }
-.hero__media{position:absolute;inset:0;overflow:hidden;}
-.hero__img{
-  width:100%;height:100%;object-fit:cover;object-position:50% 50%;
-  transform:scale(1.1);will-change:transform;
+@media(max-height:820px){
+  .hero__inner{gap:clamp(1.25rem,3.2vh,2.4rem);}
+  .hero__foot{margin-top:clamp(1.25rem,3.2vh,2.6rem);}
 }
-.hero__canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 1.2s var(--ease);}
+/* tall scroll track; the hero sticks inside it and residences begins
+   the moment the track ends — no pin-spacer gap after the dolly.
+   Without motion the track collapses so the page stays a normal scroll. */
+.hero-track{position:relative;height:auto;}
+.html-motion .hero-track{height:320vh;}
+.html-motion .hero-track .hero{position:sticky;top:0;height:100svh;min-height:0;}
+.hero__media{position:absolute;inset:0;overflow:hidden;background:#100E0C;}
+/* interior plate only — used when WebGL is unavailable; no legacy facade */
+.hero__interior{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;
+  opacity:0;transform:scale(1.4);will-change:transform,opacity;
+}
+.hero__canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;}
 .hero__canvas.is-live{opacity:1;}
+.hero__media.is-gl .hero__interior{opacity:0;}
 .hero__media::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:1;opacity:var(--veil,1);
   background:
     linear-gradient(to top,rgba(11,9,7,.82) 0%,rgba(11,9,7,.34) 38%,rgba(11,9,7,.08) 66%,rgba(11,9,7,.4) 100%),
     radial-gradient(120% 80% at 70% 30%,rgba(11,9,7,0) 40%,rgba(11,9,7,.42) 100%);
 }
+/* the dolly ends on an ivory interior wall, so the page can emerge from inside it */
+.hero__wash{position:absolute;inset:0;z-index:2;background:var(--ivory);opacity:0;pointer-events:none;}
 .hero__inner{position:relative;z-index:2;display:grid;gap:clamp(2.4rem,4vw,3.4rem);}
 .hero__eyebrow{display:flex;gap:1.1rem;align-items:center;color:rgba(241,235,225,.72);}
 .hero__eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--bronze-light);flex:none;}
 .hero h1{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;}
-.hero__title{font-size:clamp(2.9rem,9.4vw,9rem);line-height:.9;}
+.hero__title{font-size:clamp(2.55rem,8.27vw,7.92rem);line-height:.9;}
 .hero__title .w{display:inline-block;}
-.hero__title .mask-line{padding-bottom:.13em;}
+.hero__title .mask-line{padding-bottom:.115em;}
 .hero__grid{display:grid;gap:clamp(2rem,4vw,3rem);}
-@media(min-width:900px){
-  .hero__grid{grid-template-columns:minmax(0,1fr) minmax(16rem,22rem);align-items:end;gap:clamp(2.5rem,5vw,5rem);}
-}
 .hero__aside{display:grid;gap:1.8rem;}
 .hero__aside p{color:rgba(241,235,225,.68);font-size:1rem;line-height:1.66;max-width:32ch;}
+@media(min-width:900px){
+  /* editorial stack — centred in the usable hero field, foot pinned below */
+  .hero{
+    justify-content:flex-start;
+    padding-top:calc(var(--nav-h) + (100svh - var(--nav-h) - 7.5rem) * 0.44 - 2.5rem);
+    padding-bottom:clamp(2rem,4vw,3.2rem);
+  }
+  .hero__foot{margin-top:auto;}
+  .hero__inner{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    gap:0;
+  }
+  .hero__inner::before{
+    content:"";position:absolute;inset:-18% -24%;pointer-events:none;z-index:-1;
+    background:radial-gradient(ellipse 68% 78% at 50% 48%,rgba(11,9,7,.44) 0%,rgba(11,9,7,.18) 42%,transparent 70%);
+  }
+  .hero__grid{
+    grid-template-columns:1fr;
+    justify-items:center;
+    gap:0;
+    max-width:100%;
+    text-align:center;
+  }
+  .hero__title{
+    font-size:clamp(2.21rem,7.08vw,6.77rem);
+    text-align:center;
+  }
+  .hero__aside{
+    justify-items:center;
+    gap:clamp(1.5rem,1.625rem,1.75rem);
+    margin-top:clamp(1.875rem,2rem,2.375rem);
+  }
+  .hero__aside p{
+    max-width:clamp(40.625rem,42vw,45rem);
+    width:100%;
+    text-align:center;
+    line-height:1.6;
+    margin-inline:auto;
+  }
+}
+@media(min-width:900px) and (max-height:768px){
+  .hero{
+    padding-top:calc(var(--nav-h) + (100svh - var(--nav-h) - 7.5rem) * 0.36 - 1.5rem);
+    padding-bottom:clamp(1.5rem,3vh,2rem);
+  }
+  .hero__title{font-size:clamp(2rem,6.2vw,5.75rem);}
+  .hero__aside{margin-top:clamp(1.25rem,1.5rem,1.75rem);}
+  .hero__aside p{line-height:1.55;}
+  .hero__foot{margin-top:auto;padding-bottom:0;}
+}
 .hero__foot{
   position:relative;z-index:2;margin-top:clamp(2.6rem,5vw,4rem);
   display:flex;flex-wrap:wrap;gap:1.4rem 2.6rem;align-items:center;justify-content:space-between;
@@ -459,6 +537,119 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 @media(min-width:980px){
   .showcase__grid{grid-template-columns:minmax(13rem,20rem) minmax(0,1fr);gap:clamp(2.5rem,4.4vw,4.5rem);align-items:start;}
 }
+
+/* Horizontal sequence: break â†’ residences â€” scoped to #portfolioTrack only */
+.ph-track{position:relative;}
+.ph-pin{position:relative;width:100%;}
+.ph__rail{display:flex;flex-direction:column;}
+.ph__slide{position:relative;width:100%;box-sizing:border-box;}
+.ph__slide--break{width:100%;}
+.ph__prop{
+  display:grid;gap:clamp(1.6rem,3vw,2.4rem);
+  align-items:center;
+  padding-block:var(--section-y);
+  padding-inline:var(--gutter);
+  background:var(--espresso);
+  color:#F1EBE1;
+}
+@media(min-width:960px){
+  .ph__prop{
+    grid-template-columns:minmax(0,1.15fr) minmax(18rem,0.85fr);
+    gap:clamp(2rem,4vw,4rem);
+  }
+}
+.ph__media{
+  position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--espresso-soft);
+}
+@media(min-width:760px){.ph__media{aspect-ratio:16/10;}}
+.ph__media img{width:100%;height:100%;object-fit:cover;display:block;}
+.ph__media::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(10,8,6,.5),rgba(10,8,6,0) 42%);
+}
+.ph__num{
+  position:absolute;left:0;bottom:0;z-index:2;padding:clamp(1rem,2vw,1.6rem);
+  font-family:var(--serif);font-size:clamp(2.4rem,5.5vw,4.5rem);line-height:.85;color:rgba(241,235,225,.92);
+}
+.ph__num sub{
+  font-family:var(--sans);font-size:.7rem;letter-spacing:.18em;color:rgba(241,235,225,.55);
+  margin-left:.35rem;
+}
+.ph__info{display:grid;gap:1.1rem;align-content:center;}
+.ph__info .pdetail__title{font-size:clamp(1.8rem,3.2vw,2.8rem);}
+.ph__info .pdetail__place{color:rgba(241,235,225,.55);}
+.ph__info .pdetail__desc{color:rgba(241,235,225,.68);}
+.ph__info .specs{background:rgba(241,235,225,.14);}
+.ph__info .specs div{background:var(--espresso);}
+.ph__info .specs dt{color:rgba(241,235,225,.45);}
+.ph__chrome{
+  margin-top:clamp(1.5rem,3vw,2.2rem);
+  padding:0 var(--gutter) var(--section-y);
+  background:var(--espresso);
+  color:#F1EBE1;
+}
+.ph__chrome .pindex__btn{color:rgba(241,235,225,.4);}
+.ph__chrome .pindex__btn:hover{color:rgba(241,235,225,.7);}
+.ph__chrome .pindex__item.is-active .pindex__btn{color:#F1EBE1;}
+.ph__chrome .pindex__note{color:rgba(241,235,225,.4);}
+.ph__chrome .stage__bar i{background:rgba(241,235,225,.18);}
+
+/* Desktop motion: ScrollTrigger pins .ph-pin; rail runs horizontally */
+@media(min-width:900px){
+  .html-motion .ph-pin{
+    height:100vh;
+    overflow:hidden;
+    touch-action:pan-y;
+  }
+  .html-motion .ph__rail{
+    flex-direction:row;
+    flex-wrap:nowrap;
+    align-items:stretch;
+    height:100%;
+    width:max-content;
+    will-change:transform;
+  }
+  .html-motion .ph__slide{
+    flex:0 0 100vw;
+    width:100vw;
+    max-width:100vw;
+    height:100vh;
+    padding:0;
+  }
+  .html-motion .ph__slide--break{
+    min-height:100vh;
+    height:100vh;
+  }
+  .html-motion .ph__prop{
+    padding-block:calc(var(--nav-h) * .45) clamp(5.5rem,12vh,7.5rem);
+    padding-inline:var(--gutter);
+    align-content:center;
+    grid-template-columns:minmax(0,1.2fr) minmax(16rem,.8fr);
+    height:100%;
+    box-sizing:border-box;
+  }
+  .html-motion .ph__media{height:min(52vh,34rem);aspect-ratio:auto;}
+  .html-motion .ph__chrome{
+    position:absolute;left:0;right:0;bottom:0;z-index:5;
+    margin:0;padding:0 var(--gutter) clamp(1rem,2.4vh,1.6rem);
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .45s var(--ease);
+    background:linear-gradient(to top,rgba(13,10,8,.92) 55%,rgba(13,10,8,0));
+  }
+  .html-motion .ph-pin.is-props .ph__chrome{opacity:1;}
+  .html-motion .ph__chrome .pindex,
+  .html-motion .ph__chrome .stage__bar{pointer-events:auto;}
+  .html-motion .ph__chrome .pindex{
+    display:flex;flex-wrap:wrap;gap:0;border-top:1px solid rgba(241,235,225,.18);
+  }
+  .html-motion .ph__chrome .pindex__item{
+    flex:1;min-width:8rem;border-bottom:0;border-right:1px solid rgba(241,235,225,.14);
+  }
+  .html-motion .ph__chrome .pindex__item:last-child{border-right:0;}
+  .html-motion .ph__chrome .pindex__btn{padding-block:.85rem;}
+  .html-motion .ph__chrome .pindex__note{display:none;}
+}
 .pindex{display:grid;border-top:1px solid var(--hair);}
 .pindex__item{border-bottom:1px solid var(--hair);}
 .pindex__btn{
@@ -554,12 +745,14 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 @media(min-width:820px){.places{grid-template-columns:repeat(3,1fr);gap:clamp(1.6rem,3vw,3rem);align-items:start;}}
 .place__fig{position:relative;overflow:hidden;aspect-ratio:4/5;background:var(--ivory-warm);}
 .place__fig img{
-  position:absolute;top:-12.5%;left:0;width:100%;height:125%;object-fit:cover;
-  filter:grayscale(1) contrast(1.04) brightness(.98) sepia(.16);
-  transition:filter 1.1s var(--ease),transform 1.4s var(--ease);
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform:scale(1);
+  transition:transform 1.15s cubic-bezier(.16,1,.3,1);
   will-change:transform;
 }
-.place:hover .place__fig img{filter:grayscale(.35) sepia(.05) contrast(1.02);}
+@media(hover:hover) and (pointer:fine){
+  .place:hover .place__fig img{transform:scale(1.045);}
+}
 @media(min-width:820px){
   .places .place:nth-child(2){margin-top:clamp(2rem,6vw,5.5rem);}
   .places .place:nth-child(3){margin-top:clamp(1rem,3vw,2.5rem);}
@@ -608,19 +801,20 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .quote cite{font-style:normal;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg);}
 .quote .quote__meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-faint);}
 .quotes__nav{display:flex;align-items:center;gap:2rem;margin-top:clamp(2.4rem,4vw,3.4rem);padding-top:1.5rem;border-top:1px solid var(--hair);}
-.quotes__dots{display:flex;gap:1.4rem;}
+/* the gaps are pulled in so the added tap padding keeps the original optical spacing */
+.quotes__dots{display:flex;gap:.4rem;}
 .quotes__dots button{
-  font-size:.66rem;letter-spacing:.16em;color:var(--fg-faint);position:relative;padding-block:.4rem;
+  font-size:.66rem;letter-spacing:.16em;color:var(--fg-faint);position:relative;padding:.85rem .5rem;
   transition:color .5s var(--ease);font-variant-numeric:tabular-nums;
 }
 .quotes__dots button::after{
-  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;
+  content:"";position:absolute;left:.5rem;right:.5rem;bottom:.5rem;height:1px;background:currentColor;
   transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease);
 }
-.quotes__dots button[aria-selected="true"]{color:var(--accent);}
-.quotes__dots button[aria-selected="true"]::after{transform:scaleX(1);}
-.quotes__arrows{margin-left:auto;display:flex;gap:1.6rem;}
-.quotes__arrows button{color:var(--fg-muted);transition:color .4s var(--ease);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;}
+.quotes__dots button[aria-current="true"]{color:var(--accent);}
+.quotes__dots button[aria-current="true"]::after{transform:scaleX(1);}
+.quotes__arrows{margin-left:auto;display:flex;gap:.6rem;}
+.quotes__arrows button{color:var(--fg-muted);transition:color .4s var(--ease);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;padding:.85rem .5rem;}
 .quotes__arrows button:hover{color:var(--fg);}
 
 /* ============================================================
@@ -639,7 +833,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .member__name{font-family:var(--serif);font-size:clamp(1.4rem,2.1vw,1.85rem);line-height:1.1;margin-top:1.3rem;}
 .member__role{margin-top:.6rem;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-muted);}
 .member p{margin-top:.9rem;color:var(--fg-muted);font-size:.92rem;max-width:30ch;}
-.member__mail{margin-top:1.2rem;}
+.member__mail{margin-top:.75rem;}
 
 /* ============================================================
    CONTACT
@@ -652,7 +846,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .offices li{display:flex;justify-content:space-between;gap:1.5rem;padding-block:1.1rem;border-bottom:1px solid var(--hair);}
 .offices dt,.offices .o-city{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;}
 .offices .o-addr{color:var(--fg-muted);font-size:.86rem;text-align:right;}
+/* inline padding grows the tap area to the row height without shifting layout */
+.offices .o-addr a{padding-block:1.1rem;}
 .form{display:grid;gap:clamp(1.6rem,2.6vw,2.2rem);}
+.form__fields{display:grid;gap:inherit;}
 .field{position:relative;display:grid;gap:.7rem;}
 .field label{font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-muted);}
 .field input,.field select,.field textarea{
@@ -679,12 +876,15 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 /* ============================================================
    FOOTER
    ============================================================ */
-.foot{overflow:hidden;background:var(--espresso);color:#F1EBE1;--fg:#F1EBE1;--fg-muted:rgba(241,235,225,.56);--fg-faint:rgba(241,235,225,.3);--hair:rgba(241,235,225,.16);--accent:var(--bronze-light);}
+.foot{overflow:hidden;background:var(--espresso);color:#F1EBE1;--fg:#F1EBE1;--fg-muted:rgba(241,235,225,.56);--fg-faint:rgba(241,235,225,.46);--hair:rgba(241,235,225,.16);--accent:var(--bronze-light);}
 .foot__grid{display:grid;gap:clamp(2.4rem,4vw,3rem);padding-block:clamp(4rem,7vw,6rem) clamp(2rem,3vw,3rem);}
 @media(min-width:820px){.foot__grid{grid-template-columns:repeat(4,1fr);gap:2rem;}}
 .foot__col h3{font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--fg-faint);font-weight:400;margin-bottom:1.4rem;}
 .foot__col li + li{margin-top:.7rem;}
 .foot__col a,.foot__col span{font-size:.9rem;color:var(--fg-muted);transition:color .4s var(--ease);}
+/* link rows carry their own 44px tap height, so the list gap is dropped between them */
+.foot__col a{display:inline-block;padding-block:.75rem;}
+.foot__col li:has(> a) + li:has(> a){margin-top:0;}
 .foot__col a:hover{color:var(--fg);}
 .foot__word{
   font-family:var(--serif);line-height:.8;letter-spacing:-.01em;
@@ -692,11 +892,25 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   color:var(--fg);opacity:.94;white-space:nowrap;
 }
 .foot__bar{
-  display:flex;flex-wrap:wrap;gap:1rem 2.5rem;justify-content:space-between;
+  display:flex;flex-wrap:wrap;align-items:center;gap:1rem 2.5rem;justify-content:space-between;
   padding-block:1.6rem 2.4rem;border-top:1px solid var(--hair);margin-top:clamp(1.5rem,3vw,2.5rem);
 }
 .foot__bar p,.foot__bar a{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);}
+.foot__bar a{display:inline-block;padding-block:.8rem;}
 .foot__bar a:hover{color:var(--fg);}
+
+/* ============================================================
+   TABLET DENSITY
+   ============================================================ */
+/* Between 640 and 819px the layout is still single column while the portrait
+   crops are 4:5, so an uncapped figure runs the full column and pushes these
+   sections past three screens. Capping the media keeps the crop and the
+   alignment but restores a readable section length. */
+@media(min-width:640px) and (max-width:819px){
+  .about__figure{max-width:30rem;}
+  .why__figure{max-width:30rem;}
+  .places .place{max-width:34rem;}
+}
 
 /* ============================================================
    REDUCED MOTION
@@ -704,7 +918,6 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto;}
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
-  .hero__img{transform:none;}
   .scroll-cue i::after{display:none;}
 }
 </style>
@@ -718,6 +931,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     <div class="loader__mark-wrap">
       <div class="loader__mark" aria-hidden="true"><span>V</span><span>E</span><span>Y</span><span>R</span><span>A</span></div>
     </div>
+    <div class="loader__brand" aria-hidden="true">VEYRA</div>
     <div class="loader__line"><i></i></div>
     <p class="loader__sub">Private Estates</p>
   </div>
@@ -759,15 +973,15 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 <div id="top"></div>
 
 <!-- ============================ 1. HERO ============================ -->
+<div class="hero-track" id="heroTrack">
 <section class="hero" aria-label="Introduction">
-  <div class="hero__media">
-    <img class="hero__img" id="heroImg" src="assets/hero-facade.webp" alt="A contemporary estate at dusk, its shuttered facade lit from within" width="2400" height="1500" fetchpriority="high" decoding="async">
+  <div class="hero__media" id="heroMedia">
+    <img class="hero__interior" id="heroInterior" src="assets/about-corridor.webp" alt="" aria-hidden="true" loading="lazy" width="1500" height="1900" decoding="async">
     <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="hero__wash" id="heroWash" aria-hidden="true"></div>
   </div>
 
   <div class="hero__inner shell">
-    <p class="hero__eyebrow" data-rv="fade"><span class="dot" aria-hidden="true"></span><span class="label" style="color:inherit">Miami · Palm Beach · New York</span></p>
-
     <div class="hero__grid">
       <h1 class="hero__title" data-hero-title>
         <span class="mask-line"><span>Exceptional property.</span></span>
@@ -789,6 +1003,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     <div class="scroll-cue" data-rv="fade"><i aria-hidden="true"></i><span>Scroll</span></div>
   </div>
 </section>
+</div>
 
 <!-- ============================ 2. FEATURED PROPERTIES ============================ -->
 <section id="residences" class="section-pad shell" aria-labelledby="residences-h">
@@ -900,32 +1115,124 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   </div>
 </section>
 
-<!-- ============================ 5. VISUAL BREAK ============================ -->
-<section class="break" aria-label="Statement">
-  <div class="break__media" aria-hidden="true">
-    <img data-parallax="18" src="assets/break-dusk.webp" alt="" loading="lazy" width="2400" height="1500">
-  </div>
-  <div class="break__inner">
-    <p class="break__quote" data-rv="up">Some residences are never advertised.<br>They are <em>introduced</em>.</p>
-    <p class="break__attr" data-rv="fade">Veyra Private Estates — Principle No. 1</p>
-  </div>
-</section>
+<!-- ============================ 5-6. BREAK TO HORIZONTAL PORTFOLIO ============================ -->
+<div class="ph-track" id="portfolioTrack">
+  <div class="ph-pin" id="portfolioPin">
+    <div class="ph__rail" id="portfolioRail">
 
-<!-- ============================ 6. PROPERTY SHOWCASE ============================ -->
-<section id="portfolio" class="showcase section-pad shell theme-dark" aria-labelledby="portfolio-h">
-  <div class="showcase__top">
-    <div>
-      <div class="head__meta"><span class="eyebrow eyebrow--accent">Portfolio</span><span class="num">(04)</span></div>
-      <h2 class="display h-lg" id="portfolio-h" data-rv="up">The current<br>portfolio.</h2>
+      <section class="break ph__slide ph__slide--break" aria-label="Statement">
+        <div class="break__media" aria-hidden="true">
+          <img data-parallax="18" src="assets/break-dusk.webp" alt="" loading="lazy" width="2400" height="1500">
+        </div>
+        <div class="break__inner">
+          <p class="break__quote" data-rv="up">Some residences are never advertised.<br>They are <em>introduced</em>.</p>
+          <p class="break__attr" data-rv="fade">Veyra Private Estates — Principle No. 1</p>
+        </div>
+      </section>
+
+      <section id="portfolio" class="ph__slide ph__prop" data-prop="0" aria-labelledby="portfolio-h" aria-label="Casa Ardent">
+        <h2 id="portfolio-h" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">The current portfolio</h2>
+        <div class="ph__media">
+          <img src="assets/prop-casa-ardent.webp" alt="Casa Ardent, a waterfront residence with a full-length pool terrace" loading="lazy" width="2000" height="1300">
+          <span class="ph__num" aria-hidden="true">01<sub>/ 04</sub></span>
+        </div>
+        <div class="ph__info">
+          <div>
+            <h3 class="pdetail__title">Casa Ardent</h3>
+            <p class="pdetail__place">Miami Beach, Florida Â· Ref. VPE-1147</p>
+            <p class="pdetail__price">$28,500,000</p>
+          </div>
+          <div>
+            <p class="pdetail__desc">One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.</p>
+            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+          </div>
+          <dl class="specs">
+            <div><dt>Bedrooms</dt><dd>7</dd></div>
+            <div><dt>Bathrooms</dt><dd>9</dd></div>
+            <div><dt>Interior</dt><dd>10,800 sq ft</dd></div>
+            <div><dt>Reference</dt><dd>VPE-1147</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <article class="ph__slide ph__prop" data-prop="1" aria-label="The Meridian Penthouse">
+        <div class="ph__media">
+          <img src="assets/prop-meridian.webp" alt="The Meridian Penthouse, an interior framed by full-height glass" loading="lazy" width="2000" height="1300">
+          <span class="ph__num" aria-hidden="true">02<sub>/ 04</sub></span>
+        </div>
+        <div class="ph__info">
+          <div>
+            <h3 class="pdetail__title">The Meridian Penthouse</h3>
+            <p class="pdetail__place">Manhattan, New York Â· Ref. VPE-2038</p>
+            <p class="pdetail__price">$34,000,000</p>
+          </div>
+          <div>
+            <p class="pdetail__desc">A full-floor residence above Central Park, composed in natural stone, oak and uninterrupted glass.</p>
+            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+          </div>
+          <dl class="specs">
+            <div><dt>Bedrooms</dt><dd>5</dd></div>
+            <div><dt>Bathrooms</dt><dd>6</dd></div>
+            <div><dt>Interior</dt><dd>7,200 sq ft</dd></div>
+            <div><dt>Reference</dt><dd>VPE-2038</dd></div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="ph__slide ph__prop" data-prop="2" aria-label="Villa Solenne">
+        <div class="ph__media">
+          <img src="assets/prop-solenne.webp" alt="Villa Solenne, a white Mediterranean estate behind mature planting" loading="lazy" width="2000" height="1300">
+          <span class="ph__num" aria-hidden="true">03<sub>/ 04</sub></span>
+        </div>
+        <div class="ph__info">
+          <div>
+            <h3 class="pdetail__title">Villa Solenne</h3>
+            <p class="pdetail__place">Palm Beach, Florida Â· Ref. VPE-1592</p>
+            <p class="pdetail__price">Price on request</p>
+          </div>
+          <div>
+            <p class="pdetail__desc">A Mediterranean estate restored with contemporary interiors, held inside mature tropical gardens.</p>
+            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+          </div>
+          <dl class="specs">
+            <div><dt>Bedrooms</dt><dd>6</dd></div>
+            <div><dt>Bathrooms</dt><dd>8</dd></div>
+            <div><dt>Interior</dt><dd>9,400 sq ft</dd></div>
+            <div><dt>Reference</dt><dd>VPE-1592</dd></div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="ph__slide ph__prop" data-prop="3" aria-label="Ocean House No. 18">
+        <div class="ph__media">
+          <img src="assets/prop-ocean-house.webp" alt="Ocean House No. 18, a stone and glass compound above the water" loading="lazy" width="2000" height="1300">
+          <span class="ph__num" aria-hidden="true">04<sub>/ 04</sub></span>
+        </div>
+        <div class="ph__info">
+          <div>
+            <h3 class="pdetail__title">Ocean House No. 18</h3>
+            <p class="pdetail__place">Golden Beach, Florida Â· Ref. VPE-3104</p>
+            <p class="pdetail__price">$42,000,000</p>
+          </div>
+          <div>
+            <p class="pdetail__desc">An oceanfront compound with private beach access, a wellness pavilion and a separate guest residence.</p>
+            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+          </div>
+          <dl class="specs">
+            <div><dt>Bedrooms</dt><dd>8</dd></div>
+            <div><dt>Bathrooms</dt><dd>11</dd></div>
+            <div><dt>Interior</dt><dd>13,600 sq ft</dd></div>
+            <div><dt>Reference</dt><dd>VPE-3104</dd></div>
+          </dl>
+        </div>
+      </article>
+
     </div>
-    <p class="lede" data-rv="up" style="max-width:30ch">Four residences under representation. Move between them — click, drag or use the arrow keys.</p>
-  </div>
 
-  <div class="showcase__grid">
-    <div>
+    <div class="ph__chrome shell">
       <ol class="pindex" id="pindex" aria-label="Residences">
         <li class="pindex__item is-active">
-          <button class="pindex__btn" data-i="0" aria-current="true"
+          <button class="pindex__btn" type="button" data-i="0" aria-current="true"
             data-name="Casa Ardent" data-place="Miami Beach, Florida" data-ref="VPE-1147"
             data-price="$28,500,000" data-beds="7" data-baths="9" data-area="10,800 sq ft"
             data-desc="One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.">
@@ -933,7 +1240,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           </button>
         </li>
         <li class="pindex__item">
-          <button class="pindex__btn" data-i="1"
+          <button class="pindex__btn" type="button" data-i="1"
             data-name="The Meridian Penthouse" data-place="Manhattan, New York" data-ref="VPE-2038"
             data-price="$34,000,000" data-beds="5" data-baths="6" data-area="7,200 sq ft"
             data-desc="A full-floor residence above Central Park, composed in natural stone, oak and uninterrupted glass.">
@@ -941,7 +1248,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           </button>
         </li>
         <li class="pindex__item">
-          <button class="pindex__btn" data-i="2"
+          <button class="pindex__btn" type="button" data-i="2"
             data-name="Villa Solenne" data-place="Palm Beach, Florida" data-ref="VPE-1592"
             data-price="Price on request" data-beds="6" data-baths="8" data-area="9,400 sq ft"
             data-desc="A Mediterranean estate restored with contemporary interiors, held inside mature tropical gardens.">
@@ -949,7 +1256,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           </button>
         </li>
         <li class="pindex__item">
-          <button class="pindex__btn" data-i="3"
+          <button class="pindex__btn" type="button" data-i="3"
             data-name="Ocean House No. 18" data-place="Golden Beach, Florida" data-ref="VPE-3104"
             data-price="$42,000,000" data-beds="8" data-baths="11" data-area="13,600 sq ft"
             data-desc="An oceanfront compound with private beach access, a wellness pavilion and a separate guest residence.">
@@ -957,47 +1264,13 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           </button>
         </li>
       </ol>
-      <p class="pindex__note">Portfolio 01 — 04</p>
-    </div>
-
-    <div class="stage">
-      <div class="stage__frame" id="stageFrame" aria-label="Residence imagery" tabindex="0">
-        <div class="stage__layer is-current"><img src="assets/prop-casa-ardent.webp" alt="Casa Ardent, a waterfront residence with a full-length pool terrace" loading="lazy" width="2000" height="1300"></div>
-        <div class="stage__layer"><img src="assets/prop-meridian.webp" alt="The Meridian Penthouse, an interior framed by full-height glass" loading="lazy" width="2000" height="1300"></div>
-        <div class="stage__layer"><img src="assets/prop-solenne.webp" alt="Villa Solenne, a white Mediterranean estate behind mature planting" loading="lazy" width="2000" height="1300"></div>
-        <div class="stage__layer"><img src="assets/prop-ocean-house.webp" alt="Ocean House No. 18, a stone and glass compound above the water" loading="lazy" width="2000" height="1300"></div>
-        <div class="stage__count" aria-hidden="true"><span class="stage__numwrap"><span id="stageNum">01</span></span><sub>/ 04</sub></div>
-        <div class="stage__ctrl">
-          <button class="prev" id="stagePrev" aria-label="Previous residence"><i aria-hidden="true"></i></button>
-          <button class="next" id="stageNext" aria-label="Next residence"><i aria-hidden="true"></i></button>
-        </div>
-      </div>
+      <p class="pindex__note">Portfolio 01 â€” 04</p>
       <div class="stage__bar" id="stageBar" aria-hidden="true"><i class="is-on"></i><i></i><i></i><i></i></div>
-
-      <div class="pdetail">
-        <div>
-          <h3 class="pdetail__title" id="pTitle">Casa Ardent</h3>
-          <p class="pdetail__place" id="pPlace">Miami Beach, Florida · Ref. VPE-1147</p>
-          <p class="pdetail__price" id="pPrice">$28,500,000</p>
-        </div>
-        <div>
-          <p class="pdetail__desc" id="pDesc">One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.</p>
-          <a class="ln" id="pLink" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
-        </div>
-      </div>
-
-      <dl class="specs" id="pSpecs">
-        <div><dt>Bedrooms</dt><dd id="pBeds">7</dd></div>
-        <div><dt>Bathrooms</dt><dd id="pBaths">9</dd></div>
-        <div><dt>Interior</dt><dd id="pArea">10,800 sq ft</dd></div>
-        <div><dt>Reference</dt><dd id="pRef">VPE-1147</dd></div>
-      </dl>
-      <p aria-live="polite" class="sr-only" id="pLive" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);"></p>
+      <p aria-live="polite" id="pLive" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);"></p>
     </div>
   </div>
-</section>
+</div>
 <div class="drag-cue" id="dragCue" aria-hidden="true">Drag</div>
-
 <!-- ============================ 7. LIFESTYLE COLLECTION ============================ -->
 <section id="places" class="section-pad shell" aria-labelledby="places-h">
   <div class="gridlines" aria-hidden="true"></div>
@@ -1011,17 +1284,17 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 
   <div class="places">
     <article class="place" data-rv="fade">
-      <figure class="place__fig"><img data-parallax="14" src="assets/place-miami.webp" alt="Miami seen low across Biscayne Bay at first light" loading="lazy" width="1200" height="1500"></figure>
+      <figure class="place__fig"><img src="assets/place-miami.webp" alt="Miami seen low across Biscayne Bay at first light" loading="lazy" width="1200" height="1500"></figure>
       <div class="place__head"><h3 class="place__name">Miami</h3><span class="place__coord">25.7907° N</span></div>
       <p>Waterfront and design-district residences, from Indian Creek to the Venetian Islands.</p>
     </article>
     <article class="place" data-rv="fade">
-      <figure class="place__fig"><img data-parallax="14" src="assets/place-palm-beach.webp" alt="Palm Beach estate lots and gardens seen from above" loading="lazy" width="1100" height="1400"></figure>
+      <figure class="place__fig"><img src="assets/place-palm-beach.webp" alt="Palm Beach estate lots and gardens seen from above" loading="lazy" width="1100" height="1400"></figure>
       <div class="place__head"><h3 class="place__name">Palm Beach</h3><span class="place__coord">26.7056° N</span></div>
       <p>Estate sections, oceanfront blocks and landmarked Mediterranean architecture.</p>
     </article>
     <article class="place" data-rv="fade">
-      <figure class="place__fig"><img data-parallax="14" src="assets/place-new-york.webp" alt="Manhattan rooflines in flat winter light" loading="lazy" width="1200" height="1500"></figure>
+      <figure class="place__fig"><img src="assets/place-new-york.webp" alt="Manhattan rooflines in flat winter light" loading="lazy" width="1200" height="1500"></figure>
       <div class="place__head"><h3 class="place__name">New York</h3><span class="place__coord">40.7681° N</span></div>
       <p>Full-floor and penthouse residences on the Park, and townhouses downtown.</p>
     </article>
@@ -1073,10 +1346,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       </figure>
     </div>
     <div class="quotes__nav">
-      <div class="quotes__dots" id="quoteDots" aria-label="Client statements">
-        <button data-q="0" aria-selected="true" aria-label="Statement one">01</button>
-        <button data-q="1" aria-selected="false" aria-label="Statement two">02</button>
-        <button data-q="2" aria-selected="false" aria-label="Statement three">03</button>
+      <div class="quotes__dots" id="quoteDots" role="group" aria-label="Client statements">
+        <button data-q="0" aria-current="true" aria-label="Statement one">01</button>
+        <button data-q="1" aria-label="Statement two">02</button>
+        <button data-q="2" aria-label="Statement three">03</button>
       </div>
       <div class="quotes__arrows">
         <button id="quotePrev" aria-label="Previous statement">Prev</button>
@@ -1138,7 +1411,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     </div>
 
     <form class="form" id="consultForm" novalidate data-rv="up">
-      <div class="form__fields" style="display:grid;gap:inherit">
+      <div class="form__fields">
         <div class="field">
           <label for="f-name">Name</label>
           <input id="f-name" name="name" type="text" autocomplete="name" required>
@@ -1229,11 +1502,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   var root = document.documentElement;
   var MOTION = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!MOTION) root.classList.add('no-motion');
+  else root.classList.add('html-motion');
 
-  var G = window.gsap || null;
-  var ST = window.ScrollTrigger || null;
-  if (G && ST) G.registerPlugin(ST);
-  var animate = !!G && MOTION;
+  // defer is ignored on an inline script, so this block runs while the two
+  // library tags above are still pending. The handles are bound in boot(),
+  // which waits for them, rather than here where they are always undefined.
+  var G = null, ST = null, animate = false;
 
   function $(s, c) { return (c || document).querySelector(s); }
   function $$(s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); }
@@ -1272,7 +1546,6 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     });
     host.innerHTML = '';
     host.appendChild(frag);
-    host.style.transform = 'none';
     return words;
   }
 
@@ -1283,8 +1556,15 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 
   function showAll() {
     $$('[data-rv]').forEach(function (el) { el.style.opacity = '1'; el.style.transform = 'none'; });
-    $$('.mask-line > span, .hero__title .w').forEach(function (el) { el.style.transform = 'none'; el.style.opacity = '1'; });
-    var hi = $('#heroImg'); if (hi) hi.style.transform = 'scale(1.047)';
+    $$('[data-hero-title]').forEach(function (el) {
+      el.style.opacity = '1';
+      el.style.visibility = 'visible';
+      el.style.transform = 'none';
+    });
+    $$('.mask-line > span, .hero__title .w').forEach(function (el) {
+      el.style.transform = 'none';
+      el.style.opacity = '1';
+    });
   }
 
   /* ----------------------------------------------------------
@@ -1294,53 +1574,98 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   var lLetters = $$('.loader__mark span', loader);
   var lLine = $('.loader__line i', loader);
   var lSub = $('.loader__sub', loader);
+  var lBrand = $('.loader__brand', loader);
+  var loaderIntroTl = null;
 
   function loaderIntro() {
     if (!animate) {
       lLetters.forEach(function (s) { s.style.transform = 'none'; s.style.opacity = '1'; });
       lSub.style.opacity = '1';
+      if (lLine) lLine.style.transform = 'scaleX(1)';
       return;
     }
     G.set(loader, { clipPath: 'inset(0% 0% 0% 0%)' });
-    G.timeline()
+    // single continuous fill to full — never leave a second half-fill for loaderOut
+    loaderIntroTl = G.timeline()
       .fromTo(lLetters, { yPercent: 130, opacity: 0 },
         { yPercent: 0, opacity: 1, duration: 1.1, ease: 'expo.out', stagger: 0.06 })
-      .fromTo(lLine, { scaleX: 0 }, { scaleX: 0.68, duration: 2.2, ease: 'power1.inOut' }, 0.35)
+      .fromTo(lLine, { scaleX: 0 }, { scaleX: 1, duration: 2.2, ease: 'power1.inOut' }, 0.35)
       .to(lSub, { opacity: 1, duration: 0.9, ease: 'power2.out' }, 0.7);
   }
 
   function loaderOut() {
     return new Promise(function (resolve) {
       if (!animate) { loader.hidden = true; resolve(); return; }
-      G.timeline({ onComplete: function () { loader.hidden = true; resolve(); } })
-        .to(lLine, { scaleX: 1, duration: 0.55, ease: 'power2.inOut' })
-        .to(lLetters.concat([lSub]), { opacity: 0, yPercent: -18, duration: 0.7, ease: 'power2.in', stagger: 0.025 }, '-=0.2')
-        .to(loader, { clipPath: 'inset(0% 0% 100% 0%)', duration: 1.15, ease: 'expo.inOut' }, '-=0.3');
+      var fade = lLetters.concat([lSub]);
+      if (lBrand) fade.push(lBrand);
+
+      function reveal() {
+        G.set(lLine, { scaleX: 1 });
+        // fade the ivory loader out (no clip wipe) so the dark hero never
+        // flashes as an empty rectangle before the headline arrives
+        heroIn();
+        G.timeline({
+          onComplete: function () {
+            loader.hidden = true;
+            G.set(loader, { clearProps: 'clipPath' });
+            resolve();
+          }
+        })
+          .to(fade, { opacity: 0, yPercent: -14, duration: 0.55, ease: 'power2.in', stagger: 0.02 })
+          .to(loader, { autoAlpha: 0, duration: 0.85, ease: 'power2.inOut' }, '-=0.35');
+      }
+
+      // wait for the one fill to finish (speed up only if assets are already ready)
+      if (loaderIntroTl && loaderIntroTl.isActive()) {
+        loaderIntroTl.timeScale(1.6);
+        loaderIntroTl.eventCallback('onComplete', reveal);
+      } else {
+        reveal();
+      }
     });
   }
 
   /* ----------------------------------------------------------
-     Hero entrance — visual, headline, support, CTA, metadata
+     Hero entrance — headline, support, CTA, metadata
      ---------------------------------------------------------- */
   function heroIn() {
-    if (!animate) { showAll(); return; }
     var hero = $('.hero');
-    var eyebrow = $('.hero__eyebrow');
+    var title = $('[data-hero-title]');
+    var lines = $$('[data-hero-title] .mask-line > span');
+    var words = heroWords.length ? heroWords : $$('.hero__title .w');
     var aside = $$('.hero__aside > *');
     var meta = $('.hero__meta');
     var cue = $('.scroll-cue');
 
+    if (!title) return;
+
+    // keep line masks from clipping; the h1 itself carries the entrance
+    lines.forEach(function (el) { el.style.transform = 'none'; el.style.opacity = '1'; });
+    words.forEach(function (el) { el.style.transform = 'none'; el.style.opacity = '1'; });
+
+    if (!animate || !G) {
+      showAll();
+      if (hero) hero.setAttribute('data-ready', 'true');
+      return;
+    }
+
     G.set('#nav', { opacity: 0 });
 
-    G.timeline({ defaults: { ease: 'expo.out' } })
-      .fromTo('#heroImg', { scale: 1.1 }, { scale: 1.047, duration: 2.8, ease: 'power2.out' }, 0)
-      .fromTo(heroWords, { yPercent: 130, opacity: 0 },
-        { yPercent: 0, opacity: 1, duration: 1.45, stagger: 0.09 }, 0.15)
-      .to(eyebrow, { opacity: 1, duration: 1.1 }, 0.55)
-      .fromTo(aside[0], { y: 24 }, { y: 0, opacity: 1, duration: 1.2 }, '-=0.85')
-      .fromTo(aside[1], { y: 20 }, { y: 0, opacity: 1, duration: 1.1 }, '-=0.9')
-      .to([meta, cue], { opacity: 1, duration: 1, stagger: 0.1 }, '-=0.8')
-      .to('#nav', { opacity: 1, duration: 0.9 }, '-=0.7')
+    G.timeline({ defaults: { ease: 'power3.out' } })
+      .fromTo(title,
+        { autoAlpha: 0, y: 28 },
+        { autoAlpha: 1, y: 0, duration: 1.55 },
+        0)
+      .fromTo(aside[0],
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: 1.25 },
+        0.35)
+      .fromTo(aside[1],
+        { autoAlpha: 0, y: 16 },
+        { autoAlpha: 1, y: 0, duration: 1.15 },
+        0.5)
+      .to([meta, cue].filter(Boolean), { autoAlpha: 1, duration: 1, stagger: 0.1 }, 0.7)
+      .to('#nav', { opacity: 1, duration: 0.9 }, 0.55)
       .add(function () { if (ST) ST.refresh(); });
 
     if (hero) hero.setAttribute('data-ready', 'true');
@@ -1376,11 +1701,15 @@ section{position:relative;background:var(--bg);color:var(--fg);}
      ---------------------------------------------------------- */
   var nav = $('#nav'), navToggle = $('#navToggle'), menu = $('#menu');
   var lastY = window.pageYOffset, ticking = false;
+  // while the hero dolly owns the scroll the bar follows the camera, not the
+  // offset, so it turns solid at the moment the interior does
+  var heroDolly = { active: false, inside: false };
 
   function onScroll() {
     var y = window.pageYOffset;
     var vh = window.innerHeight;
-    nav.classList.toggle('is-solid', y > vh * 0.8 || menu.classList.contains('is-open'));
+    var solid = heroDolly.active ? heroDolly.inside : y > vh * 0.8;
+    nav.classList.toggle('is-solid', solid || menu.classList.contains('is-open'));
     if (!menu.classList.contains('is-open')) {
       if (y > lastY + 8 && y > vh) nav.classList.add('is-hidden');
       else if (y < lastY - 8) nav.classList.remove('is-hidden');
@@ -1402,6 +1731,8 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     if (open) nav.classList.remove('is-hidden');
     onScroll();
   }
+  // the bar is only translated off-screen, so its links stay in the tab order
+  nav.addEventListener('focusin', function () { nav.classList.remove('is-hidden'); });
   navToggle.addEventListener('click', function () { setMenu(!menu.classList.contains('is-open')); });
   $$('a', menu).forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
   document.addEventListener('keydown', function (e) {
@@ -1457,7 +1788,8 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   var rows = $$('.index__row');
   var preview = $('#hoverPreview');
 
-  if (FINE && animate && preview && indexList) {
+  function initHoverPreview() {
+    if (!FINE || !animate || !preview || !indexList) return;
     var pImg = preview.querySelector('img');
     var f = follower(preview, { ease: 0.13 });
     var visible = false;
@@ -1525,149 +1857,199 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   });
 
   /* ----------------------------------------------------------
-     Property showcase
+     Property showcase — horizontal scroll (desktop + motion)
      ---------------------------------------------------------- */
   var pBtns = $$('.pindex__btn');
-  var layers = $$('.stage__layer');
   var bars = $$('#stageBar i');
-  var frame = $('#stageFrame');
-  var stageNum = $('#stageNum');
   var live = $('#pLive');
-  var txtEls = [$('#pTitle'), $('#pPlace'), $('#pPrice'), $('#pDesc')];
-  var specEls = [$('#pBeds'), $('#pBaths'), $('#pArea'), $('#pRef')];
+  var propSlides = $$('#portfolioRail .ph__prop');
   var current = 0;
-  var tlRef = null;
+  var phTween = null;
+  var phScrolling = false;
 
-  function applyData(d) {
-    $('#pTitle').textContent = d.name;
-    $('#pPlace').textContent = d.place + ' · Ref. ' + d.ref;
-    $('#pPrice').textContent = d.price;
-    $('#pDesc').textContent = d.desc;
-    $('#pBeds').textContent = d.beds;
-    $('#pBaths').textContent = d.baths;
-    $('#pArea').textContent = d.area;
-    $('#pRef').textContent = d.ref;
-  }
-
-  function transitionImage(prev, next, dir) {
-    if (tlRef) { tlRef.progress(1); tlRef.kill(); tlRef = null; }
-    var from = layers[prev], to = layers[next];
-    G.set(layers, { zIndex: 0 });
-    G.set(from, { zIndex: 1, opacity: 1, clipPath: 'none' });
-    G.set(to, { zIndex: 2, opacity: 1 });
-
-    tlRef = G.timeline({
-      onComplete: function () {
-        layers.forEach(function (l, k) {
-          l.classList.toggle('is-current', k === next);
-          G.set(l, { clearProps: 'clipPath' });
-          if (k === next) { G.set(l, { opacity: 1, zIndex: 1 }); }
-          else { G.set(l, { opacity: 0, zIndex: 0 }); G.set(l.firstElementChild, { xPercent: 0, scale: 1 }); }
-        });
-        tlRef = null;
-      }
-    });
-    tlRef
-      .fromTo(to, { clipPath: dir > 0 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)' },
-        { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.15, ease: 'expo.inOut' }, 0)
-      .fromTo(to.firstElementChild, { xPercent: dir > 0 ? 12 : -12, scale: 1.05 },
-        { xPercent: 0, scale: 1, duration: 1.45, ease: 'expo.out' }, 0)
-      .fromTo(from.firstElementChild, { xPercent: 0 },
-        { xPercent: dir > 0 ? -7 : 7, duration: 1.45, ease: 'expo.out' }, 0);
-  }
-
-  function setProperty(i, dir) {
+  function markProperty(i) {
     if (!pBtns.length) return;
-    i = (i % pBtns.length + pBtns.length) % pBtns.length;
-    if (i === current) return;
-    var d = pBtns[i].dataset;
-    var prev = current;
-    var direction = typeof dir === 'number' ? dir : (i > prev ? 1 : -1);
+    i = Math.max(0, Math.min(pBtns.length - 1, i));
     current = i;
-
     pBtns.forEach(function (b, k) {
       b.parentElement.classList.toggle('is-active', k === i);
-      if (k === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+      if (k === i) b.setAttribute('aria-current', 'true');
+      else b.removeAttribute('aria-current');
     });
     bars.forEach(function (b, k) { b.classList.toggle('is-on', k <= i); });
-    if (live) live.textContent = d.name + ', ' + d.place;
+    propSlides.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
+    if (live && pBtns[i]) {
+      var d = pBtns[i].dataset;
+      live.textContent = d.name + ', ' + d.place;
+    }
+  }
 
-    if (!animate) {
-      layers.forEach(function (l, k) { l.classList.toggle('is-current', k === i); });
-      stageNum.textContent = pad(i + 1);
-      applyData(d);
+  function scrollToProperty(i, smooth) {
+    i = Math.max(0, Math.min(pBtns.length - 1, i));
+    markProperty(i);
+    var pin = $('#portfolioPin');
+    if (pin) pin.classList.add('is-props');
+    if (!phTween || !ST) {
+      var slide = propSlides[i];
+      if (slide) slide.scrollIntoView({ behavior: smooth === false ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
+      return;
+    }
+    // slide 0 = break, slides 1..n = properties - land on property i
+    var slides = $$('#portfolioRail .ph__slide');
+    var total = Math.max(1, slides.length - 1);
+    var target = (i + 1) / total;
+    var st = phTween.scrollTrigger;
+    if (!st) return;
+    var y = st.start + (st.end - st.start) * target;
+    phScrolling = true;
+    if (smooth === false || !G) {
+      window.scrollTo(0, y);
+      phScrolling = false;
+      return;
+    }
+    var proxy = { y: window.pageYOffset };
+    G.to(proxy, {
+      y: y,
+      duration: 1.05,
+      ease: 'power3.inOut',
+      overwrite: true,
+      onUpdate: function () { window.scrollTo(0, proxy.y); },
+      onComplete: function () { phScrolling = false; }
+    });
+  }
+
+  function setProperty(i) {
+    scrollToProperty(i, true);
+  }
+
+  function initPortfolioHScroll() {
+    var track = $('#portfolioTrack');
+    var pin = $('#portfolioPin');
+    var rail = $('#portfolioRail');
+    if (!track || !pin || !rail) return;
+
+    if (!animate || !ST || !window.matchMedia('(min-width: 900px)').matches) {
+      markProperty(0);
       return;
     }
 
-    transitionImage(prev, i, direction);
+    // hard-set horizontal geometry so the rail always has real width to travel
+    var layout = function (resetX) {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      G.set(pin, { height: h, overflow: 'hidden' });
+      var railProps = {
+        display: 'flex',
+        flexDirection: 'row',
+        flexWrap: 'nowrap',
+        width: 'max-content',
+        height: h
+      };
+      if (resetX) railProps.x = 0;
+      G.set(rail, railProps);
+      $$('.ph__slide', rail).forEach(function (slide) {
+        G.set(slide, { width: w, maxWidth: w, height: h, flexShrink: 0, padding: 0 });
+      });
+    };
+    layout(true);
 
-    G.to(stageNum, {
-      yPercent: -110, opacity: 0, duration: 0.32, ease: 'power2.in',
-      onComplete: function () {
-        stageNum.textContent = pad(i + 1);
-        G.fromTo(stageNum, { yPercent: 90, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.8, ease: 'expo.out' });
+    var getTravel = function () {
+      return Math.max(0, rail.scrollWidth - window.innerWidth);
+    };
+
+    if (phTween) {
+      if (phTween.scrollTrigger) phTween.scrollTrigger.kill();
+      phTween.kill();
+      phTween = null;
+    }
+
+    phTween = G.to(rail, {
+      x: function () { return -getTravel(); },
+      ease: 'none',
+      scrollTrigger: {
+        trigger: track,
+        pin: pin,
+        scrub: 0.85,
+        start: 'top top',
+        end: function () { return '+=' + getTravel(); },
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onRefresh: function () { layout(false); },
+        onUpdate: function (self) {
+          if (phScrolling) return;
+          var slides = $$('#portfolioRail .ph__slide');
+          var total = Math.max(1, slides.length - 1);
+          var slideIdx = Math.round(self.progress * total);
+          if (slideIdx <= 0) {
+            pin.classList.remove('is-props');
+            return;
+          }
+          pin.classList.add('is-props');
+          var propIdx = Math.min(pBtns.length - 1, slideIdx - 1);
+          if (propIdx !== current) markProperty(propIdx);
+        }
       }
     });
 
-    var all = txtEls.concat(specEls);
-    G.to(all, {
-      opacity: 0, y: -8, duration: 0.3, ease: 'power2.in', stagger: 0.02,
-      onComplete: function () {
-        applyData(d);
-        G.fromTo(all, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.05 });
-      }
-    });
+    markProperty(0);
+    if (ST) ST.refresh();
   }
-
-  function nextProp() { setProperty(current + 1, 1); }
-  function prevProp() { setProperty(current - 1, -1); }
-
   pBtns.forEach(function (b) {
-    b.addEventListener('click', function () { setProperty(parseInt(b.dataset.i, 10)); });
+    b.addEventListener('click', function () {
+      setProperty(parseInt(b.dataset.i, 10));
+    });
   });
-  var nextBtn = $('#stageNext'), prevBtn = $('#stagePrev');
-  if (nextBtn) nextBtn.addEventListener('click', nextProp);
-  if (prevBtn) prevBtn.addEventListener('click', prevProp);
 
-  if (frame) {
-    frame.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowRight') { e.preventDefault(); nextProp(); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); prevProp(); }
-    });
+  // keyboard when portfolio is in view
+  window.addEventListener('keydown', function (e) {
+    var track = $('#portfolioTrack');
+    if (!track || !animate) return;
+    var r = track.getBoundingClientRect();
+    if (r.top > window.innerHeight * 0.15 || r.bottom < window.innerHeight * 0.4) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); setProperty(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); setProperty(current - 1); }
+  });
 
+  // drag on property media (desktop)
+  (function () {
+    var rail = $('#portfolioRail');
+    if (!rail || !FINE) return;
     var down = false, sx = 0, dx = 0;
-    frame.addEventListener('pointerdown', function (e) {
+    rail.addEventListener('pointerdown', function (e) {
       if (e.button && e.button !== 0) return;
+      if (e.target.closest('a, button')) return;
       down = true; sx = e.clientX; dx = 0;
-      frame.classList.add('is-dragging');
     });
-    frame.addEventListener('pointermove', function (e) { if (down) dx = e.clientX - sx; });
+    rail.addEventListener('pointermove', function (e) { if (down) dx = e.clientX - sx; });
     function endDrag() {
       if (!down) return;
       down = false;
-      frame.classList.remove('is-dragging');
-      if (Math.abs(dx) > 55) { if (dx < 0) nextProp(); else prevProp(); }
+      if (Math.abs(dx) > 55) {
+        if (dx < 0) setProperty(current + 1);
+        else setProperty(current - 1);
+      }
       dx = 0;
     }
-    frame.addEventListener('pointerup', endDrag);
-    frame.addEventListener('pointercancel', endDrag);
-    frame.addEventListener('pointerleave', endDrag);
+    rail.addEventListener('pointerup', endDrag);
+    rail.addEventListener('pointercancel', endDrag);
 
     var cue = $('#dragCue');
-    if (FINE && cue) {
+    if (cue) {
       var cf = follower(cue, { ease: 0.18, restScale: 0.6 });
-      frame.addEventListener('pointerenter', function (e) {
-        cf.jump(e.clientX, e.clientY); cf.start(); cf.scale(1);
-        cue.style.opacity = '1';
-      });
-      frame.addEventListener('pointermove', function (e) { cf.move(e.clientX, e.clientY); });
-      frame.addEventListener('pointerleave', function () {
-        cf.scale(0.6); cue.style.opacity = '0';
-        setTimeout(function () { cf.stop(); }, 420);
+      $$('#portfolioRail .ph__media').forEach(function (media) {
+        media.addEventListener('pointerenter', function (e) {
+          cf.jump(e.clientX, e.clientY); cf.start(); cf.scale(1);
+          cue.style.opacity = '1';
+        });
+        media.addEventListener('pointermove', function (e) { cf.move(e.clientX, e.clientY); });
+        media.addEventListener('pointerleave', function () {
+          cf.scale(0.6); cue.style.opacity = '0';
+          setTimeout(function () { cf.stop(); }, 420);
+        });
       });
       cue.style.transition = 'opacity .45s cubic-bezier(.16,1,.3,1)';
     }
-  }
+  })();
 
   rows.forEach(function (row) {
     row.addEventListener('click', function () {
@@ -1687,11 +2069,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     if (i === qi) return;
     quotes[qi].classList.remove('is-current');
     quotes[qi].setAttribute('aria-hidden', 'true');
-    if (qDots[qi]) qDots[qi].setAttribute('aria-selected', 'false');
+    if (qDots[qi]) qDots[qi].removeAttribute('aria-current');
     qi = i;
     quotes[qi].classList.add('is-current');
     quotes[qi].removeAttribute('aria-hidden');
-    if (qDots[qi]) qDots[qi].setAttribute('aria-selected', 'true');
+    if (qDots[qi]) qDots[qi].setAttribute('aria-current', 'true');
     if (animate) G.fromTo(quotes[qi], { y: 16 }, { y: 0, duration: 1, ease: 'expo.out' });
   }
   qDots.forEach(function (b) { b.addEventListener('click', function () { setQuote(parseInt(b.dataset.q, 10)); }); });
@@ -1733,129 +2115,430 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   }
 
   /* ----------------------------------------------------------
-     Hero — WebGL depth layer (optional enhancement)
+     Hero — the approach
+     The hero pins for a little over two screens while the camera is flown
+     down the colonnade, through the portal and to rest inside the
+     residence. The wall it comes to rest on is ivory, so the first
+     section emerges from within the building instead of cutting to it.
+     Where WebGL is unavailable the two photographic plates carry the
+     same move, and with reduced motion the hero simply stays still.
      ---------------------------------------------------------- */
-  function initHeroGL() {
-    if (!MOTION || window.innerWidth < 760) return;
-    var canvas = $('#heroCanvas');
-    if (!canvas || !window.Promise) return;
-    try {
-      var probe = document.createElement('canvas');
-      if (!(probe.getContext('webgl') || probe.getContext('experimental-webgl'))) return;
-    } catch (err) { return; }
+  function initHeroDolly() {
+    var hero = $('.hero'), media = $('#heroMedia'), track = $('#heroTrack');
+    var inner = $('.hero__inner'), foot = $('.hero__foot');
+    var wash = $('#heroWash'), interior = $('#heroInterior');
+    if (!hero || !media || !track || !animate || !ST) {
+      if (media) media.classList.add('is-fallback');
+      return;
+    }
 
-    import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js').then(function (THREE) {
-      var hero = $('.hero');
-      var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, alpha: false, powerPreference: 'low-power' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+    var p = 0, target = 0, view = null, drift = 0, aim = 0;
 
+    function cut(v, a, b) { v = (v - a) / (b - a); return v < 0 ? 0 : v > 1 ? 1 : v; }
+    function ease(v) { return v * v * (3 - 2 * v); }
+
+    function paintPlates(v) {
+      if (!interior) return;
+      var i = cut(v, 0.32, 0.84);
+      interior.style.opacity = i.toFixed(3);
+      interior.style.transform = 'scale(' + (1.4 - ease(i) * 0.32).toFixed(4) + ')';
+    }
+
+    function paint(v) {
+      var out = ease(cut(v, 0, 0.28));
+      inner.style.opacity = (1 - out).toFixed(3);
+      inner.style.transform = 'translate3d(0,' + (-out * 7).toFixed(2) + 'vh,0)';
+      foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
+      media.style.setProperty('--veil', (1 - cut(v, 0.35, 0.82) * 0.94).toFixed(3));
+      // the wash lands on ivory just as the camera settles, then yields so the
+      // next section can inherit the same field without a hard cut
+      wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
+      hero.style.opacity = (1 - ease(cut(v, 0.97, 1)) * 0.02).toFixed(3);
+      heroDolly.inside = v > 0.72;
+      if (view) view.frame(v); else paintPlates(v);
+    }
+
+    /* ---- the residence, built rather than filmed ---- */
+    function buildView(THREE, canvas) {
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      var DUSK = new THREE.Color(0x100E0C), IVORY = new THREE.Color(0xF1EBE1);
       var scene = new THREE.Scene();
-      var camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      scene.fog = new THREE.Fog(DUSK.clone(), 40, 160);
+      scene.background = scene.fog.color;
+      var camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
 
-      var uniforms = {
-        uTex: { value: null },
-        uRes: { value: new THREE.Vector2(1, 1) },
-        uImg: { value: new THREE.Vector2(2400, 1500) },
-        uTime: { value: 0 },
-        uZoom: { value: 0.955 },
-        uMouse: { value: new THREE.Vector2(0, 0) },
-        uScroll: { value: 0 }
-      };
-
-      var material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: [
-          'varying vec2 vUv;',
-          'void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }'
-        ].join('\n'),
-        fragmentShader: [
-          'precision highp float;',
-          'varying vec2 vUv;',
-          'uniform sampler2D uTex;',
-          'uniform vec2 uRes; uniform vec2 uImg; uniform vec2 uMouse;',
-          'uniform float uTime; uniform float uZoom; uniform float uScroll;',
-          'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }',
-          'void main(){',
-          '  float ra = (uRes.x / uRes.y) / (uImg.x / uImg.y);',
-          '  vec2 ratio = vec2(min(ra, 1.0), min(1.0 / ra, 1.0));',
-          '  vec2 uv = vec2(vUv.x * ratio.x + (1.0 - ratio.x) * 0.5, vUv.y * ratio.y + (1.0 - ratio.y) * 0.5);',
-          '  vec2 c = (uv - 0.5) * uZoom;',
-          '  float drift = sin(uTime * 0.05) * 0.003;',
-          '  c += vec2(uMouse.x * 0.010 + drift, -uMouse.y * 0.007 + uScroll * 0.009);',
-          '  uv = c + 0.5;',
-          '  vec3 col = texture2D(uTex, uv).rgb;',
-          '  col = mix(col, col * vec3(1.035, 0.985, 0.945), 0.65);',
-          '  col *= 1.0 - uScroll * 0.16;',
-          '  vec2 v = vUv - 0.5;',
-          '  col *= 1.0 - smoothstep(0.32, 0.95, length(v)) * 0.34;',
-          '  float g = hash(vUv * uRes + fract(uTime) * 97.0);',
-          '  col += (g - 0.5) * 0.020;',
-          '  gl_FragColor = vec4(col, 1.0);',
-          '}'
-        ].join('\n')
-      });
-
-      scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
-
-      function resize() {
-        var w = hero.clientWidth, h = hero.clientHeight;
-        renderer.setSize(w, h, false);
-        uniforms.uRes.value.set(w, h);
+      // stone / wood maps with visible grain at hero distance
+      function makeMap(draw, scaleU, scaleV) {
+        var cv = document.createElement('canvas');
+        cv.width = cv.height = 512;
+        var ctx = cv.getContext('2d');
+        draw(ctx, 512);
+        var tex = new THREE.CanvasTexture(cv);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(scaleU || 2, scaleV || 2);
+        if ('colorSpace' in tex && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
       }
-      resize();
+      var limestoneMap = makeMap(function (ctx, s) {
+        ctx.fillStyle = '#E6DCCB'; ctx.fillRect(0, 0, s, s);
+        var i, x, y, w, h;
+        for (i = 0; i < 900; i++) {
+          x = Math.random() * s; y = Math.random() * s;
+          ctx.fillStyle = 'rgba(120,100,70,' + (0.03 + Math.random() * 0.07) + ')';
+          ctx.fillRect(x, y, 1 + Math.random() * 3, 1 + Math.random() * 2);
+        }
+        for (i = 0; i < 40; i++) {
+          y = Math.random() * s;
+          ctx.strokeStyle = 'rgba(90,75,55,' + (0.04 + Math.random() * 0.06) + ')';
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(s, y + (Math.random() - 0.5) * 8); ctx.stroke();
+        }
+        for (i = 0; i < 18; i++) {
+          x = Math.random() * s; y = Math.random() * s;
+          w = 20 + Math.random() * 60; h = 8 + Math.random() * 18;
+          ctx.fillStyle = 'rgba(160,140,110,0.08)';
+          ctx.fillRect(x, y, w, h);
+        }
+      }, 1.4, 2.2);
+      var darkStoneMap = makeMap(function (ctx, s) {
+        ctx.fillStyle = '#1A1713'; ctx.fillRect(0, 0, s, s);
+        for (var i = 0; i < 1200; i++) {
+          ctx.fillStyle = 'rgba(55,48,40,' + (0.05 + Math.random() * 0.12) + ')';
+          ctx.fillRect(Math.random() * s, Math.random() * s, 2, 2);
+        }
+      }, 4, 4);
+      var oakMap = makeMap(function (ctx, s) {
+        ctx.fillStyle = '#8A7355'; ctx.fillRect(0, 0, s, s);
+        for (var i = 0; i < 80; i++) {
+          var y = i * (s / 80) + Math.random() * 2;
+          ctx.strokeStyle = 'rgba(40,28,16,' + (0.08 + Math.random() * 0.12) + ')';
+          ctx.beginPath(); ctx.moveTo(0, y);
+          for (var x = 0; x < s; x += 16) ctx.lineTo(x, y + Math.sin(x * 0.04 + i) * 1.5);
+          ctx.stroke();
+        }
+      }, 1, 3);
 
-      var mx = 0, my = 0, tmx = 0, tmy = 0;
-      if (FINE) {
-        hero.addEventListener('pointermove', function (e) {
-          var r = hero.getBoundingClientRect();
-          tmx = ((e.clientX - r.left) / r.width) * 2 - 1;
-          tmy = ((e.clientY - r.top) / r.height) * 2 - 1;
+      function matt(hex, rough, emissive, emInt, map) {
+        return new THREE.MeshStandardMaterial({
+          color: new THREE.Color(hex), map: map || null,
+          roughness: rough, metalness: 0.03,
+          emissive: new THREE.Color(emissive || 0x000000), emissiveIntensity: emInt || 0
         });
       }
-
-      var visible = true, running = false, raf = null, t0 = 0;
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver(function (en) {
-          visible = en[0].isIntersecting;
-          if (visible) start(); else stop();
-        }, { threshold: 0 }).observe(hero);
+      function metal(hex, rough, metalness, emissive, emInt) {
+        return new THREE.MeshStandardMaterial({
+          color: new THREE.Color(hex), roughness: rough, metalness: metalness == null ? 0.88 : metalness,
+          emissive: new THREE.Color(emissive || 0x000000), emissiveIntensity: emInt || 0
+        });
       }
-      document.addEventListener('visibilitychange', function () {
-        if (document.hidden) stop(); else if (visible) start();
+      function slab(w, h, d, mat, x, y, z) {
+        var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z); scene.add(m); return m;
+      }
+      function deck(w, d, mat, y, z) {
+        var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+        m.rotation.x = -Math.PI / 2; m.position.set(0, y, z); scene.add(m); return m;
+      }
+      function cyl(rTop, rBot, h, mat, x, y, z, seg) {
+        var m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg || 20), mat);
+        m.position.set(x, y, z); scene.add(m); return m;
+      }
+
+      var stone = matt(0xEDE4D4, 0.7, 0x3A2E20, 0.1, limestoneMap);
+      var stoneDeep = matt(0xD2C6B2, 0.78, 0x2A2218, 0.06, limestoneMap);
+      var stonePale = matt(0xF5EEE3, 0.58, 0x4A3A28, 0.14, limestoneMap);
+      var groove = matt(0xC4B6A0, 0.88, 0x1A1410, 0.04);
+      var bronze = metal(0xA07A45, 0.3, 0.9, 0x5A3814, 0.28);
+      var bronzeSoft = metal(0xC4A066, 0.4, 0.78, 0x4A3018, 0.18);
+      var glass = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0x1A2030), roughness: 0.05, metalness: 0.55,
+        emissive: new THREE.Color(0xF2C888), emissiveIntensity: 0.65
+      });
+      var darkFloor = matt(0x171410, 0.92, 0x000000, 0, darkStoneMap);
+      var pool = metal(0x080706, 0.05, 0.95, 0x3A2814, 0.22);
+      var plaster = matt(0xF2ECE1, 0.7, 0xE8DFD0, 0.08);
+      var plasterBright = matt(0xF8F2E8, 0.62, 0xF0E8DA, 0.16);
+      var oak = matt(0x8A7355, 0.55, 0x2A1C10, 0.05, oakMap);
+      var oakDark = matt(0x6A5640, 0.6, 0x1A120A, 0.04, oakMap);
+      var cove = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFFE4B0) });
+
+      // court + pool with heavy stone coping
+      deck(280, 280, darkFloor, 0, -20);
+      deck(11.6, 43, pool, 0.03, -8);
+      slab(13.2, 0.18, 0.42, stoneDeep, 0, 0.12, 13.6);
+      slab(13.2, 0.18, 0.42, stoneDeep, 0, 0.12, -29.5);
+      slab(0.42, 0.18, 43.5, stoneDeep, -5.9, 0.12, -8);
+      slab(0.42, 0.18, 43.5, stoneDeep, 5.9, 0.12, -8);
+      slab(7.4, 0.16, 1.2, stoneDeep, 0, 0.1, -28.1);
+      slab(6.8, 0.16, 1.0, stone, 0, 0.26, -28.85);
+      slab(6.3, 0.14, 0.8, stonePale, 0, 0.4, -29.5);
+
+      // colonnade — limestone shafts with readable capital, plinth, and flutes
+      function column(x, z) {
+        slab(1.4, 0.3, 1.4, stoneDeep, x, 0.15, z);
+        slab(1.18, 0.24, 1.18, stone, x, 0.4, z);
+        slab(1.02, 0.12, 1.02, bronze, x, 0.56, z);
+        // primary shaft
+        slab(0.78, 7.15, 0.78, stonePale, x, 4.28, z);
+        // corner flutes — narrow so the limestone still dominates
+        slab(0.09, 6.95, 0.82, groove, x - 0.42, 4.28, z);
+        slab(0.09, 6.95, 0.82, groove, x + 0.42, 4.28, z);
+        slab(0.82, 6.95, 0.09, groove, x, 4.28, z - 0.42);
+        slab(0.82, 6.95, 0.09, groove, x, 4.28, z + 0.42);
+        // vertical face beads that catch the portal light
+        slab(0.06, 6.9, 0.8, stone, x - 0.3, 4.28, z);
+        slab(0.06, 6.9, 0.8, stone, x + 0.3, 4.28, z);
+        // mid collar
+        slab(0.95, 0.16, 0.95, bronzeSoft, x, 4.28, z);
+        // capital stack
+        cyl(0.42, 0.4, 0.24, bronze, x, 7.98, z, 24);
+        slab(1.05, 0.2, 1.05, stone, x, 8.22, z);
+        slab(1.25, 0.3, 1.25, stonePale, x, 8.46, z);
+        slab(1.38, 0.14, 1.38, stoneDeep, x, 8.66, z);
+        slab(0.9, 0.12, 0.9, bronze, x, 8.78, z);
+      }
+      for (var i = 0; i < 12; i++) {
+        var cz = 16 - i * 3.8;
+        column(-6.6, cz);
+        column(6.6, cz);
+        if (i < 11) {
+          // path uplights
+          cyl(0.06, 0.08, 0.22, bronze, -6.6, 0.22, cz - 1.9, 10);
+          cyl(0.06, 0.08, 0.22, bronze, 6.6, 0.22, cz - 1.9, 10);
+          slab(0.2, 0.04, 0.2, cove, -6.6, 0.35, cz - 1.9);
+          slab(0.2, 0.04, 0.2, cove, 6.6, 0.35, cz - 1.9);
+        }
+      }
+
+      // entablature + coffered soffit
+      slab(1.45, 0.5, 49, stone, -6.6, 9.15, -5);
+      slab(1.45, 0.5, 49, stone, 6.6, 9.15, -5);
+      slab(1.6, 0.2, 49.4, stoneDeep, -6.6, 9.48, -5);
+      slab(1.6, 0.2, 49.4, stoneDeep, 6.6, 9.48, -5);
+      slab(14.6, 0.18, 49, stoneDeep, 0, 9.58, -5);
+      for (var row = 0; row < 10; row++) {
+        for (var col = 0; col < 5; col++) {
+          slab(2.05, 0.1, 2.4, stonePale, -4.4 + col * 2.2, 9.4, 12.5 - row * 4.2);
+          slab(1.7, 0.06, 2.0, groove, -4.4 + col * 2.2, 9.34, 12.5 - row * 4.2);
+        }
+      }
+      slab(14.7, 0.05, 0.1, bronze, 0, 9.35, 16.2);
+      slab(14.7, 0.05, 0.1, bronze, 0, 9.35, -29.4);
+
+      // facade massing
+      var faceZ = -30;
+      slab(16.4, 12.6, 1.6, stonePale, -11.3, 6.3, faceZ);
+      slab(16.4, 12.6, 1.6, stonePale, 11.3, 6.3, faceZ);
+      slab(6.6, 4.8, 1.6, stonePale, 0, 10.1, faceZ);
+      // horizontal string courses across the facade
+      slab(45, 0.22, 1.9, stoneDeep, 0, 6.0, -29.15);
+      slab(45, 0.18, 1.9, stoneDeep, 0, 10.6, -29.15);
+      // cornice
+      slab(45.2, 0.4, 2.4, stone, 0, 12.6, -29.05);
+      slab(45.8, 0.2, 2.9, stoneDeep, 0, 12.88, -28.9);
+      slab(44.2, 0.55, 6.8, stoneDeep, 0, 13.2, -28.5);
+      // portal pilasters
+      slab(0.7, 12.4, 0.55, stone, -3.9, 6.2, -29.05);
+      slab(0.7, 12.4, 0.55, stone, 3.9, 6.2, -29.05);
+      slab(0.78, 0.35, 0.62, bronze, -3.9, 12.25, -29);
+      slab(0.78, 0.35, 0.62, bronze, 3.9, 12.25, -29);
+
+      // deep lit window bays
+      function windowBay(x, y) {
+        slab(2.7, 3.9, 0.7, groove, x, y, -29.55);
+        slab(2.35, 3.5, 0.12, glass, x, y, -29.15);
+        slab(0.08, 3.5, 0.14, bronze, x - 0.55, y, -29.05);
+        slab(0.08, 3.5, 0.14, bronze, x + 0.55, y, -29.05);
+        slab(0.08, 3.5, 0.14, bronze, x, y, -29.05);
+        slab(2.35, 0.08, 0.14, bronze, x, y + 0.85, -29.05);
+        slab(2.35, 0.08, 0.14, bronze, x, y - 0.85, -29.05);
+        slab(2.85, 0.16, 0.55, bronzeSoft, x, y + 2.05, -29.25);
+        slab(2.85, 0.22, 0.6, stone, x, y - 2.1, -29.25);
+      }
+      [-14.6, -11.2, -7.8, 7.8, 11.2, 14.6].forEach(function (x) {
+        windowBay(x, 3.5);
+        windowBay(x, 8.35);
       });
 
-      function frameLoop(now) {
-        if (!t0) t0 = now;
-        uniforms.uTime.value = (now - t0) / 1000;
-        mx += (tmx - mx) * 0.045;
-        my += (tmy - my) * 0.045;
-        uniforms.uMouse.value.set(mx, my);
-        uniforms.uScroll.value = Math.min(1, window.pageYOffset / Math.max(1, window.innerHeight));
+      // portal — deep bronze throat, lit lintel
+      slab(0.38, 7.8, 2.1, bronze, -3.15, 3.95, -29.55);
+      slab(0.38, 7.8, 2.1, bronze, 3.15, 3.95, -29.55);
+      slab(6.7, 0.55, 2.2, stone, 0, 8.05, -29.5);
+      slab(6.4, 0.14, 2.0, bronzeSoft, 0, 7.72, -29.45);
+      slab(6.2, 0.07, 1.7, cove, 0, 7.6, -29.65);
+      slab(6.4, 0.12, 1.8, stoneDeep, 0, 0.48, -29.65);
+      slab(0.1, 7.55, 0.1, bronzeSoft, -2.95, 3.9, -28.75);
+      slab(0.1, 7.55, 0.1, bronzeSoft, 2.95, 3.9, -28.75);
+
+      // interior — recessed panels, skirting, crown, oak floor
+      slab(0.5, 7.95, 22.5, plaster, -3.55, 3.98, -41.2);
+      slab(0.5, 7.95, 22.5, plaster, 3.55, 3.98, -41.2);
+      slab(0.2, 0.28, 22.5, oakDark, -3.35, 0.2, -41.2);
+      slab(0.2, 0.28, 22.5, oakDark, 3.35, 0.2, -41.2);
+      slab(0.18, 0.22, 22.5, stonePale, -3.35, 7.7, -41.2);
+      slab(0.18, 0.22, 22.5, stonePale, 3.35, 7.7, -41.2);
+      for (var p = 0; p < 5; p++) {
+        var pz = -33.2 - p * 4.0;
+        // inset wall panels with oak frames
+        slab(0.08, 5.2, 3.2, oakDark, -3.28, 3.7, pz);
+        slab(0.08, 5.2, 3.2, oakDark, 3.28, 3.7, pz);
+        slab(0.05, 4.7, 2.7, plasterBright, -3.22, 3.7, pz);
+        slab(0.05, 4.7, 2.7, plasterBright, 3.22, 3.7, pz);
+      }
+      slab(7.7, 0.42, 22.5, stonePale, 0, 7.88, -41.2);
+      deck(7.2, 22.5, oak, 0.05, -41.2);
+      for (var f = 0; f < 9; f++) {
+        slab(6.9, 0.025, 0.05, bronzeSoft, 0, 0.07, -32.5 - f * 2.3);
+      }
+      slab(2.0, 0.08, 19.5, cove, 0, 7.52, -41);
+      slab(0.12, 0.1, 19.5, bronzeSoft, -1.1, 7.48, -41);
+      slab(0.12, 0.1, 19.5, bronzeSoft, 1.1, 7.48, -41);
+      // end wall — soft architectural field the page inherits
+      slab(9.5, 8.8, 0.55, plasterBright, 0, 4.4, -52.2);
+      slab(6.8, 0.2, 0.12, oakDark, 0, 0.55, -51.85);
+      slab(6.8, 0.16, 0.12, oakDark, 0, 7.9, -51.85);
+      slab(5.6, 4.8, 0.1, plaster, 0, 4.3, -51.85);
+      slab(0.1, 4.4, 0.12, bronzeSoft, -1.6, 4.3, -51.75);
+      slab(0.1, 4.4, 0.12, bronzeSoft, 1.6, 4.3, -51.75);
+      slab(3.4, 0.1, 0.12, bronzeSoft, 0, 6.2, -51.75);
+      slab(3.4, 0.1, 0.12, bronzeSoft, 0, 2.4, -51.75);
+
+      // lighting — keep the dusk mood, but lift the limestone so detail reads
+      scene.add(new THREE.HemisphereLight(new THREE.Color(0x6A7A98), new THREE.Color(0x3A2E22), 1.15));
+      var moon = new THREE.DirectionalLight(new THREE.Color(0xD0DCF0), 1.35);
+      moon.position.set(-22, 28, 18); scene.add(moon);
+      var warm = new THREE.DirectionalLight(new THREE.Color(0xF2D6A8), 0.85);
+      warm.position.set(14, 12, 10); scene.add(warm);
+      var front = new THREE.DirectionalLight(new THREE.Color(0xF0E4D0), 0.45);
+      front.position.set(0, 8, 30); scene.add(front);
+      var spill = new THREE.PointLight(new THREE.Color(0xFFD399), 200, 58, 1.65);
+      spill.position.set(0, 3.6, -31.5); scene.add(spill);
+      var fill = new THREE.PointLight(new THREE.Color(0xFFE4B8), 150, 50, 1.7);
+      fill.position.set(0, 5.2, -43); scene.add(fill);
+      var endlit = new THREE.PointLight(new THREE.Color(0xFFF6E4), 120, 32, 1.6);
+      endlit.position.set(0, 4.2, -49); scene.add(endlit);
+      // colonnade uplights — warm the nearest shafts
+      var upL = new THREE.PointLight(new THREE.Color(0xF0D2A0), 40, 14, 2);
+      upL.position.set(-6.6, 1.4, 12); scene.add(upL);
+      var upR = upL.clone(); upR.position.set(6.6, 1.4, 12); scene.add(upR);
+      var midL = new THREE.PointLight(new THREE.Color(0xE8C89A), 28, 16, 2);
+      midL.position.set(-6.6, 2.2, 0); scene.add(midL);
+      var midR = midL.clone(); midR.position.set(6.6, 2.2, 0); scene.add(midR);
+
+      var camZ = 14, camY = 3.1;
+
+      function frame(v) {
+        var e = ease(v);
+        camZ = 14 - e * 60;
+        camY = 3.1 - e * 1.05;
+        camera.fov = 46 - e * 9;
+        camera.updateProjectionMatrix();
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.38, 1)) * 0.98);
+        scene.fog.near = 40 - e * 8;
+        scene.fog.far = 160 - e * 90;
+        renderer.toneMappingExposure = 1.15 + ease(cut(v, 0.45, 1)) * 0.35;
+      }
+
+      function render(t, dx) {
+        camera.position.set(dx * 0.45 + Math.sin(t * 0.08) * 0.1, camY + Math.sin(t * 0.11) * 0.03, camZ);
+        camera.lookAt(camera.position.x * 0.35, 3.2, -84);
         renderer.render(scene, camera);
-        raf = requestAnimationFrame(frameLoop);
       }
-      function start() { if (!running) { running = true; raf = requestAnimationFrame(frameLoop); } }
-      function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
 
-      var loaderTex = new THREE.TextureLoader();
-      loaderTex.load('assets/hero-facade.webp', function (tex) {
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.generateMipmaps = false;
-        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-        uniforms.uTex.value = tex;
-        uniforms.uImg.value.set(tex.image.width, tex.image.height);
-        start();
-        // hand over only once the still image has settled, so the framing matches
-        setTimeout(function () { canvas.classList.add('is-live'); }, 1800);
-      });
+      function size() {
+        var w = hero.clientWidth, h = hero.clientHeight;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / Math.max(1, h);
+        camera.updateProjectionMatrix();
+      }
 
-      var rt;
-      window.addEventListener('resize', function () {
-        clearTimeout(rt);
-        rt = setTimeout(resize, 160);
+      frame(0);
+      return { frame: frame, render: render, size: size };
+    }
+
+    var running = false, raf = null, onView = true, t0 = 0;
+
+    function apply(v) {
+      p = v;
+      paint(p);
+      if (view) view.frame(p);
+    }
+    function loop(now) {
+      if (!t0) t0 = now;
+      p += (target - p) * 0.12;
+      if (Math.abs(target - p) < 0.0004) p = target;
+      drift += (aim - drift) * 0.045;
+      paint(p);
+      if (view) view.render((now - t0) / 1000, drift);
+      raf = requestAnimationFrame(loop);
+    }
+    function play() { if (!running) { running = true; raf = requestAnimationFrame(loop); } }
+    function halt() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
+    function settle(v) { target = v; apply(v); if (view) view.render(0, drift); }
+
+    heroDolly.active = true;
+    ST.create({
+      trigger: track,
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: true,
+      invalidateOnRefresh: true,
+      // scroll owns the framing; the rAF loop only softens it and adds drift
+      onUpdate: function (self) {
+        target = self.progress;
+        apply(target);
+        if (nav) onScroll();
+      },
+      onLeave: function () { settle(1); if (nav) onScroll(); },
+      onLeaveBack: function () { settle(0); if (nav) onScroll(); }
+    });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (en) {
+        onView = en[0].isIntersecting;
+        if (onView) play(); else halt();
+      }, { threshold: 0 }).observe(hero);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) halt(); else if (onView) play();
+    });
+    if (FINE) {
+      hero.addEventListener('pointermove', function (e) {
+        aim = ((e.clientX - hero.getBoundingClientRect().left) / Math.max(1, hero.clientWidth)) * 2 - 1;
       }, { passive: true });
-    }).catch(function () { /* the still image remains */ });
+    }
+
+    paint(0);
+    play();
+
+    var canvas = $('#heroCanvas'), glOK = false;
+    try {
+      var probe = document.createElement('canvas');
+      glOK = !!(probe.getContext('webgl') || probe.getContext('experimental-webgl'));
+    } catch (err) { glOK = false; }
+
+    if (canvas && glOK && window.Promise && window.innerWidth >= 760) {
+      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js').then(function (THREE) {
+        view = buildView(THREE, canvas);
+        view.size();
+        paint(p);
+        view.render(0, drift);
+        media.classList.add('is-gl');
+        canvas.classList.add('is-live');
+        if (ST) ST.refresh();
+        var rt;
+        window.addEventListener('resize', function () {
+          clearTimeout(rt);
+          rt = setTimeout(view.size, 160);
+        }, { passive: true });
+      }).catch(function () { media.classList.add('is-fallback'); });
+    } else {
+      media.classList.add('is-fallback');
+    }
   }
 
   /* ----------------------------------------------------------
@@ -1871,26 +2554,72 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     return Promise.race([Promise.all([loaded, fonts]), cap]);
   }
 
-  var t0 = performance.now();
-  var minHold = MOTION ? 1500 : 300;
+  function boot() {
+    G = window.gsap || null;
+    ST = window.ScrollTrigger || null;
+    if (G && ST) G.registerPlugin(ST);
+    animate = !!G && MOTION;
 
-  loaderIntro();
+    // always open on the hero after refresh (override browser scroll restoration)
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
 
-  whenReady()
-    .then(function () {
-      var wait = Math.max(0, minHold - (performance.now() - t0));
-      return new Promise(function (r) { setTimeout(r, wait); });
-    })
-    .then(loaderOut)
-    .then(function () {
-      heroIn();
-      initReveals();
-      initHeroGL();
-    })
-    .catch(function () {
-      loader.hidden = true;
-      showAll();
-    });
+    initHoverPreview();
+
+    var t0 = performance.now();
+    var minHold = MOTION ? 1500 : 300;
+
+    loaderIntro();
+    // start the new hero during the loader so the facade never appears underneath
+    initHeroDolly();
+
+    function heroReady() {
+      return new Promise(function (resolve) {
+        var media = $('#heroMedia');
+        if (!media || media.classList.contains('is-gl') || media.classList.contains('is-fallback')) {
+          resolve();
+          return;
+        }
+        var n = 0;
+        var id = setInterval(function () {
+          n += 1;
+          if (media.classList.contains('is-gl') || media.classList.contains('is-fallback') || n > 80) {
+            clearInterval(id);
+            resolve();
+          }
+        }, 50);
+      });
+    }
+
+    whenReady()
+      .then(function () {
+        var wait = Math.max(0, minHold - (performance.now() - t0));
+        return new Promise(function (r) { setTimeout(r, wait); });
+      })
+      .then(heroReady)
+      .then(function () {
+        if (!animate) heroIn();
+        return loaderOut();
+      })
+      .then(function () {
+        initReveals();
+        initPortfolioHScroll();
+        if (ST) ST.refresh();
+        // safety: if the entrance never revealed the headline, force it visible
+        setTimeout(function () {
+          var title = $('[data-hero-title]');
+          if (title && parseFloat(getComputedStyle(title).opacity) < 0.05) showAll();
+        }, 2000);
+      })
+      .catch(function () {
+        loader.hidden = true;
+        showAll();
+      });
+  }
+
+  // deferred scripts finish before DOMContentLoaded, so gsap exists by here
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
 </script>
 </body>
