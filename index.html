@@ -319,12 +319,23 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .html-motion .hero-track{height:320vh;}
 .html-motion .hero-track .hero{position:sticky;top:0;height:100svh;min-height:0;}
 .hero__media{position:absolute;inset:0;overflow:hidden;background:#100E0C;}
-/* interior plate only — used when WebGL is unavailable; no legacy facade */
+/* interior plate — desktop dolly starts hidden; mobile/static fallback is visible at rest */
 .hero__interior{
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;
   opacity:0;transform:scale(1.4);will-change:transform,opacity;
+  transition:opacity .85s var(--ease),transform 1.2s var(--ease);
 }
-.hero__canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;}
+.hero__media.is-fallback .hero__interior{
+  opacity:1;transform:scale(1.06);
+}
+/* Mobile: show the static plate immediately (no wait for JS / Three) */
+@media(max-width:759px){
+  .hero__interior{opacity:1;transform:scale(1.06);}
+}
+.hero__canvas{
+  position:absolute;inset:0;width:100%;height:100%;opacity:0;
+  transition:opacity .85s var(--ease);
+}
 .hero__canvas.is-live{opacity:1;}
 .hero__media.is-gl .hero__interior{opacity:0;}
 .hero__media::after{
@@ -976,7 +987,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 <div class="hero-track" id="heroTrack">
 <section class="hero" aria-label="Introduction">
   <div class="hero__media" id="heroMedia">
-    <img class="hero__interior" id="heroInterior" src="assets/about-corridor.webp" alt="" aria-hidden="true" loading="lazy" width="1500" height="1900" decoding="async">
+    <img class="hero__interior" id="heroInterior" src="assets/about-corridor.webp" alt="" aria-hidden="true" loading="eager" fetchpriority="high" width="1500" height="1900" decoding="async">
     <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
     <div class="hero__wash" id="heroWash" aria-hidden="true"></div>
   </div>
@@ -2128,11 +2139,17 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     var inner = $('.hero__inner'), foot = $('.hero__foot');
     var wash = $('#heroWash'), interior = $('#heroInterior');
     if (!hero || !media || !track || !animate || !ST) {
+      // reduced-motion / no GSAP: static image only — never leave a dark empty plate
       if (media) media.classList.add('is-fallback');
+      if (interior) {
+        interior.style.opacity = '1';
+        interior.style.transform = 'scale(1.06)';
+      }
       return;
     }
 
     var p = 0, target = 0, view = null, drift = 0, aim = 0;
+    var isDesktopHero = window.innerWidth >= 760;
 
     function cut(v, a, b) { v = (v - a) / (b - a); return v < 0 ? 0 : v > 1 ? 1 : v; }
     function ease(v) { return v * v * (3 - 2 * v); }
@@ -2140,6 +2157,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     function paintPlates(v) {
       if (!interior) return;
       var i = cut(v, 0.32, 0.84);
+      // Static / mobile fallback: keep the plate visible at rest; gentle scale on scrub
+      if (!view && media.classList.contains('is-fallback')) {
+        interior.style.opacity = '1';
+        interior.style.transform = 'scale(' + (1.06 - ease(i) * 0.06).toFixed(4) + ')';
+        return;
+      }
       interior.style.opacity = i.toFixed(3);
       interior.style.transform = 'scale(' + (1.4 - ease(i) * 0.32).toFixed(4) + ')';
     }
@@ -2460,6 +2483,105 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       return { frame: frame, render: render, size: size };
     }
 
+    /* Lightweight mobile scene — separate from desktop buildView */
+    function buildMobileView(THREE, canvas) {
+      var renderer = new THREE.WebGLRenderer({
+        canvas: canvas, antialias: false, alpha: false, powerPreference: 'low-power'
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      var DUSK = new THREE.Color(0x100E0C), IVORY = new THREE.Color(0xF1EBE1);
+      var scene = new THREE.Scene();
+      scene.background = DUSK.clone();
+      scene.fog = new THREE.Fog(DUSK.clone(), 28, 95);
+      var camera = new THREE.PerspectiveCamera(48, 1, 0.2, 200);
+
+      var stone = new THREE.MeshLambertMaterial({ color: 0xE8DFD0 });
+      var stoneDeep = new THREE.MeshLambertMaterial({ color: 0xC9BBA6 });
+      var bronze = new THREE.MeshLambertMaterial({ color: 0xA07A45, emissive: 0x3A2410, emissiveIntensity: 0.22 });
+      var dark = new THREE.MeshLambertMaterial({ color: 0x14110E });
+      var glow = new THREE.MeshBasicMaterial({ color: 0xF2C888 });
+
+      function box(w, h, d, mat, x, y, z) {
+        var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z);
+        scene.add(m);
+        return m;
+      }
+
+      // ground + simple approach
+      var ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 120), dark);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(0, 0, -20);
+      scene.add(ground);
+
+      // facade block + portal
+      box(22, 14, 2.2, stone, 0, 7, -36);
+      box(5.2, 8.5, 1.2, dark, 0, 4.25, -34.6);
+      box(5.6, 0.35, 1.4, bronze, 0, 8.7, -34.4);
+
+      // four column pairs (low segment count)
+      var i, z;
+      for (i = 0; i < 4; i++) {
+        z = 6 - i * 10;
+        box(0.85, 7.2, 0.85, stoneDeep, -5.2, 3.6, z);
+        box(0.85, 7.2, 0.85, stoneDeep, 5.2, 3.6, z);
+        box(0.95, 0.28, 0.95, bronze, -5.2, 7.35, z);
+        box(0.95, 0.28, 0.95, bronze, 5.2, 7.35, z);
+      }
+      // canopy suggestion
+      box(13, 0.35, 28, stone, 0, 7.7, -6);
+
+      // warm portal light target
+      box(3.6, 5.5, 0.2, glow, 0, 3.6, -48);
+
+      var key = new THREE.DirectionalLight(0xFFE6C4, 1.15);
+      key.position.set(-6, 14, 18);
+      scene.add(key);
+      scene.add(new THREE.AmbientLight(0x6A5A48, 0.45));
+      var portal = new THREE.PointLight(0xFFD9A0, 55, 40, 2);
+      portal.position.set(0, 4, -40);
+      scene.add(portal);
+
+      var camZ = 12, camY = 3.0;
+
+      function frame(v) {
+        var e = ease(v);
+        camZ = 12 - e * 48;
+        camY = 3.0 - e * 0.7;
+        camera.fov = 48 - e * 6;
+        camera.updateProjectionMatrix();
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.42, 1)) * 0.95);
+        scene.background.copy(scene.fog.color);
+        scene.fog.near = 28 - e * 6;
+        scene.fog.far = 95 - e * 40;
+      }
+
+      function render(t) {
+        // no pointer parallax — tiny idle only
+        camera.position.set(Math.sin(t * 0.05) * 0.06, camY, camZ);
+        camera.lookAt(0, 3.1, -70);
+        renderer.render(scene, camera);
+      }
+
+      function size() {
+        var w = hero.clientWidth, h = hero.clientHeight;
+        // lower internal resolution on mobile for GPU headroom
+        var scale = 0.85;
+        renderer.setSize(Math.max(1, Math.floor(w * scale)), Math.max(1, Math.floor(h * scale)), false);
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        camera.aspect = w / Math.max(1, h);
+        camera.updateProjectionMatrix();
+      }
+
+      frame(0);
+      return { frame: frame, render: render, size: size };
+    }
+
     var running = false, raf = null, onView = true, t0 = 0;
 
     function apply(v) {
@@ -2512,6 +2634,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       }, { passive: true });
     }
 
+    // Mobile / constrained: show static plate immediately (progressive enhance later)
+    if (!isDesktopHero) media.classList.add('is-fallback');
+
     paint(0);
     play();
 
@@ -2521,21 +2646,66 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       glOK = !!(probe.getContext('webgl') || probe.getContext('experimental-webgl'));
     } catch (err) { glOK = false; }
 
-    if (canvas && glOK && window.Promise && window.innerWidth >= 760) {
-      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js').then(function (THREE) {
-        view = buildView(THREE, canvas);
-        view.size();
-        paint(p);
-        view.render(0, drift);
+    var mem = navigator.deviceMemory;
+    var cores = navigator.hardwareConcurrency;
+    var constrained = (typeof mem === 'number' && mem < 4) ||
+      (typeof cores === 'number' && cores < 4);
+    var wantMobileGL = !isDesktopHero && glOK && !!window.Promise && !constrained;
+
+    function bindViewResize() {
+      var rt;
+      window.addEventListener('resize', function () {
+        clearTimeout(rt);
+        rt = setTimeout(function () {
+          if (view) view.size();
+        }, 160);
+      }, { passive: true });
+    }
+
+    function activateView(built, progressive) {
+      view = built;
+      view.size();
+      paint(p);
+      view.render(0, drift);
+      if (progressive) {
+        // mobile: first frame under the static plate, then soft crossfade
+        requestAnimationFrame(function () {
+          canvas.classList.add('is-live');
+          requestAnimationFrame(function () {
+            // clear inline plate styles so .is-gl can fade the image out
+            if (interior) {
+              interior.style.opacity = '';
+              interior.style.transform = '';
+            }
+            media.classList.add('is-gl');
+            if (ST) ST.refresh();
+          });
+        });
+      } else {
+        // desktop: immediate handoff (unchanged)
         media.classList.add('is-gl');
         canvas.classList.add('is-live');
         if (ST) ST.refresh();
-        var rt;
-        window.addEventListener('resize', function () {
-          clearTimeout(rt);
-          rt = setTimeout(view.size, 160);
-        }, { passive: true });
+      }
+      bindViewResize();
+    }
+
+    if (canvas && glOK && window.Promise && isDesktopHero) {
+      // Desktop path unchanged
+      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js').then(function (THREE) {
+        activateView(buildView(THREE, canvas), false);
       }).catch(function () { media.classList.add('is-fallback'); });
+    } else if (canvas && wantMobileGL) {
+      // Lightweight mobile WebGL — only after static plate is already showing
+      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js').then(function (THREE) {
+        try {
+          activateView(buildMobileView(THREE, canvas), true);
+        } catch (err) {
+          media.classList.add('is-fallback');
+        }
+      }).catch(function () {
+        media.classList.add('is-fallback');
+      });
     } else {
       media.classList.add('is-fallback');
     }
