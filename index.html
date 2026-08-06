@@ -2483,68 +2483,183 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       return { frame: frame, render: render, size: size };
     }
 
-    /* Lightweight mobile scene — separate from desktop buildView */
+    /* Lightweight mobile scene — separate from desktop buildView (never called ≥760px) */
     function buildMobileView(THREE, canvas) {
       var renderer = new THREE.WebGLRenderer({
         canvas: canvas, antialias: false, alpha: false, powerPreference: 'low-power'
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.05;
+      renderer.toneMappingExposure = 0.98;
       if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       var DUSK = new THREE.Color(0x100E0C), IVORY = new THREE.Color(0xF1EBE1);
       var scene = new THREE.Scene();
       scene.background = DUSK.clone();
-      scene.fog = new THREE.Fog(DUSK.clone(), 28, 95);
+      scene.fog = new THREE.Fog(DUSK.clone(), 22, 88);
       var camera = new THREE.PerspectiveCamera(48, 1, 0.2, 200);
 
-      var stone = new THREE.MeshLambertMaterial({ color: 0xE8DFD0 });
-      var stoneDeep = new THREE.MeshLambertMaterial({ color: 0xC9BBA6 });
-      var bronze = new THREE.MeshLambertMaterial({ color: 0xA07A45, emissive: 0x3A2410, emissiveIntensity: 0.22 });
-      var dark = new THREE.MeshLambertMaterial({ color: 0x14110E });
-      var glow = new THREE.MeshBasicMaterial({ color: 0xF2C888 });
+      // Tiny procedural maps — micro-variation without heavy textures
+      function softMap(baseHex, grain, size) {
+        var s = size || 128;
+        var cv = document.createElement('canvas');
+        cv.width = cv.height = s;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#' + ('000000' + baseHex.toString(16)).slice(-6);
+        ctx.fillRect(0, 0, s, s);
+        var n, x, y;
+        for (n = 0; n < grain; n++) {
+          x = Math.random() * s; y = Math.random() * s;
+          ctx.fillStyle = 'rgba(0,0,0,' + (0.015 + Math.random() * 0.04) + ')';
+          ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
+        }
+        var tex = new THREE.CanvasTexture(cv);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2.2, 2.2);
+        if ('colorSpace' in tex && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+      var plasterMap = softMap(0xE8DFD0, 220, 128);
+      var limestoneMap = softMap(0xD4C6B0, 280, 128);
+      limestoneMap.repeat.set(1.4, 3.2);
+      var floorMap = softMap(0x12100E, 160, 128);
+      floorMap.repeat.set(3, 5);
+      var bronzeMap = softMap(0x8A6A42, 90, 64);
+      bronzeMap.repeat.set(1.5, 1.5);
 
+      var plaster = new THREE.MeshStandardMaterial({
+        color: 0xEDE6DA, map: plasterMap, roughness: 0.78, metalness: 0.02,
+        emissive: 0x2A241C, emissiveIntensity: 0.04
+      });
+      var limestone = new THREE.MeshStandardMaterial({
+        color: 0xD8CBB6, map: limestoneMap, roughness: 0.72, metalness: 0.03,
+        emissive: 0x1C1812, emissiveIntensity: 0.03
+      });
+      var limestoneSoft = new THREE.MeshStandardMaterial({
+        color: 0xE4D8C6, map: plasterMap, roughness: 0.68, metalness: 0.02
+      });
+      var bronze = new THREE.MeshStandardMaterial({
+        color: 0x8E6E44, map: bronzeMap, roughness: 0.48, metalness: 0.82,
+        emissive: 0x3A2814, emissiveIntensity: 0.12
+      });
+      var bronzeSoft = new THREE.MeshStandardMaterial({
+        color: 0xA48456, roughness: 0.55, metalness: 0.72,
+        emissive: 0x2E1E10, emissiveIntensity: 0.08
+      });
+      var floorMat = new THREE.MeshStandardMaterial({
+        color: 0x100E0C, map: floorMap, roughness: 0.38, metalness: 0.22,
+        emissive: 0x000000, emissiveIntensity: 0
+      });
+      var portalVoid = new THREE.MeshStandardMaterial({
+        color: 0x0A0908, roughness: 0.9, metalness: 0.05
+      });
+      var portalGlow = new THREE.MeshStandardMaterial({
+        color: 0x1A1410, roughness: 0.65, metalness: 0.1,
+        emissive: 0xC4A06A, emissiveIntensity: 0.35
+      });
+      var shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false
+      });
+
+      function add(mesh, x, y, z) {
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+        return mesh;
+      }
       function box(w, h, d, mat, x, y, z) {
-        var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-        m.position.set(x, y, z);
-        scene.add(m);
-        return m;
+        return add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat), x, y, z);
+      }
+      // Softened column: tapered shaft + capital/base rings (reads as beveled, not a box)
+      function column(x, z) {
+        var shaft = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.38, 0.44, 6.4, 10),
+          limestone
+        );
+        add(shaft, x, 3.55, z);
+        var base = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.58, 0.62, 0.28, 10),
+          limestoneSoft
+        );
+        add(base, x, 0.24, z);
+        var plinth = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.66, 0.7, 0.16, 10),
+          plaster
+        );
+        add(plinth, x, 0.06, z);
+        var neck = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.46, 0.4, 0.22, 10),
+          limestoneSoft
+        );
+        add(neck, x, 6.85, z);
+        var cap = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.62, 0.5, 0.32, 10),
+          bronzeSoft
+        );
+        add(cap, x, 7.12, z);
+        var abacus = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.14, 1.2),
+          bronze
+        );
+        add(abacus, x, 7.34, z);
+        // lightweight contact shadow — grounds the shaft
+        var disc = new THREE.Mesh(new THREE.CircleGeometry(0.85, 12), shadowMat);
+        disc.rotation.x = -Math.PI / 2;
+        add(disc, x, 0.02, z);
       }
 
-      // ground + simple approach
-      var ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 120), dark);
-      ground.rotation.x = -Math.PI / 2;
-      ground.position.set(0, 0, -20);
-      scene.add(ground);
+      // Floor slab (slight thickness so it reads as mass, not a paper plane)
+      var floor = new THREE.Mesh(new THREE.BoxGeometry(70, 0.18, 110), floorMat);
+      add(floor, 0, -0.09, -18);
+      // Soft center runner — darker contact band down the aisle
+      var runner = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.2, 70),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
+      );
+      runner.rotation.x = -Math.PI / 2;
+      add(runner, 0, 0.01, -12);
 
-      // facade block + portal
-      box(22, 14, 2.2, stone, 0, 7, -36);
-      box(5.2, 8.5, 1.2, dark, 0, 4.25, -34.6);
-      box(5.6, 0.35, 1.4, bronze, 0, 8.7, -34.4);
+      // Facade mass + recessed portal with bronze lintel / reveals
+      box(24, 15, 2.6, plaster, 0, 7.4, -36.2);
+      box(6.2, 9.2, 1.4, portalVoid, 0, 4.5, -34.7);
+      box(6.6, 0.28, 1.6, bronze, 0, 9.2, -34.5);
+      box(0.22, 9.0, 1.5, bronzeSoft, -3.2, 4.5, -34.55);
+      box(0.22, 9.0, 1.5, bronzeSoft, 3.2, 4.5, -34.55);
+      // Inner warm aperture (muted — keeps headline contrast)
+      box(4.4, 7.2, 0.3, portalGlow, 0, 4.1, -40.5);
+      box(18, 0.45, 3.2, limestoneSoft, 0, 14.2, -36);
 
-      // four column pairs (low segment count)
+      // Four column pairs — same corridor rhythm
       var i, z;
       for (i = 0; i < 4; i++) {
         z = 6 - i * 10;
-        box(0.85, 7.2, 0.85, stoneDeep, -5.2, 3.6, z);
-        box(0.85, 7.2, 0.85, stoneDeep, 5.2, 3.6, z);
-        box(0.95, 0.28, 0.95, bronze, -5.2, 7.35, z);
-        box(0.95, 0.28, 0.95, bronze, 5.2, 7.35, z);
+        column(-5.15, z);
+        column(5.15, z);
       }
-      // canopy suggestion
-      box(13, 0.35, 28, stone, 0, 7.7, -6);
 
-      // warm portal light target
-      box(3.6, 5.5, 0.2, glow, 0, 3.6, -48);
+      // Entablature / canopy with layered trim (softens the single slab look)
+      box(13.5, 0.42, 30, plaster, 0, 7.55, -5);
+      box(13.8, 0.12, 30.4, bronzeSoft, 0, 7.32, -5);
+      box(12.8, 0.18, 29.2, limestoneSoft, 0, 7.78, -5);
 
-      var key = new THREE.DirectionalLight(0xFFE6C4, 1.15);
-      key.position.set(-6, 14, 18);
+      // Side wall hints — enclose the corridor without clutter
+      box(0.5, 9.5, 42, plaster, -7.4, 4.6, -8);
+      box(0.5, 9.5, 42, plaster, 7.4, 4.6, -8);
+
+      // Soft architectural lighting — depth without theatrical hotspots
+      var hemi = new THREE.HemisphereLight(0xF0E6D6, 0x1A1510, 0.42);
+      scene.add(hemi);
+      var key = new THREE.DirectionalLight(0xF5E6D0, 0.72);
+      key.position.set(-5.5, 16, 14);
       scene.add(key);
-      scene.add(new THREE.AmbientLight(0x6A5A48, 0.45));
-      var portal = new THREE.PointLight(0xFFD9A0, 55, 40, 2);
-      portal.position.set(0, 4, -40);
-      scene.add(portal);
+      var fill = new THREE.DirectionalLight(0xC8B8A0, 0.28);
+      fill.position.set(7, 8, 6);
+      scene.add(fill);
+      var portalLit = new THREE.PointLight(0xE8C89A, 28, 36, 2);
+      portalLit.position.set(0, 4.2, -38);
+      scene.add(portalLit);
+      var aisle = new THREE.PointLight(0xD4B890, 12, 22, 2);
+      aisle.position.set(0, 5.5, -2);
+      scene.add(aisle);
 
       var camZ = 12, camY = 3.0;
 
@@ -2554,22 +2669,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         camY = 3.0 - e * 0.7;
         camera.fov = 48 - e * 6;
         camera.updateProjectionMatrix();
-        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.42, 1)) * 0.95);
+        // Keep end wash restrained so type stays readable over the scene
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.42, 1)) * 0.82);
         scene.background.copy(scene.fog.color);
-        scene.fog.near = 28 - e * 6;
-        scene.fog.far = 95 - e * 40;
+        scene.fog.near = 22 - e * 5;
+        scene.fog.far = 88 - e * 36;
+        renderer.toneMappingExposure = 0.98 + ease(cut(v, 0.5, 1)) * 0.12;
       }
 
       function render(t) {
-        // no pointer parallax — tiny idle only
-        camera.position.set(Math.sin(t * 0.05) * 0.06, camY, camZ);
-        camera.lookAt(0, 3.1, -70);
+        camera.position.set(Math.sin(t * 0.05) * 0.05, camY, camZ);
+        camera.lookAt(0, 3.15, -70);
         renderer.render(scene, camera);
       }
 
       function size() {
         var w = hero.clientWidth, h = hero.clientHeight;
-        // lower internal resolution on mobile for GPU headroom
         var scale = 0.85;
         renderer.setSize(Math.max(1, Math.floor(w * scale)), Math.max(1, Math.floor(h * scale)), false);
         canvas.style.width = w + 'px';
