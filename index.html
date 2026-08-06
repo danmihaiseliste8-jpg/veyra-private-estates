@@ -330,7 +330,31 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 }
 /* Mobile: show the static plate immediately (no wait for JS / Three) */
 @media(max-width:759px){
-  .hero__interior{opacity:1;transform:scale(1.06);}
+  .hero__interior{opacity:1;transform:scale(1.06);object-position:50% 22%;}
+  /*
+    Mobile pin coverage: 100svh underfills when the browser chrome collapses,
+    flashing the ivory body through the transparent track. Use dvh (vh fallback)
+    so the sticky hero always matches the visible viewport, and keep the track
+    dark as a defensive backstop. Desktop rules above 759px stay unchanged.
+  */
+  .hero{
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  .html-motion .hero-track{
+    background:#100E0C;
+  }
+  .html-motion .hero-track .hero{
+    height:100vh;
+    height:100dvh;
+    min-height:100svh;
+  }
+  .hero__media,
+  .hero__canvas,
+  .hero__interior,
+  .hero__wash{
+    min-height:100%;
+  }
 }
 .hero__canvas{
   position:absolute;inset:0;width:100%;height:100%;opacity:0;
@@ -2173,10 +2197,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       inner.style.transform = 'translate3d(0,' + (-out * 7).toFixed(2) + 'vh,0)';
       foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
       media.style.setProperty('--veil', (1 - cut(v, 0.35, 0.82) * 0.94).toFixed(3));
-      // the wash lands on ivory just as the camera settles, then yields so the
-      // next section can inherit the same field without a hard cut
-      wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
-      hero.style.opacity = (1 - ease(cut(v, 0.97, 1)) * 0.02).toFixed(3);
+      if (isDesktopHero) {
+        // Desktop unchanged: ivory wash lands as the camera settles
+        wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
+        hero.style.opacity = (1 - ease(cut(v, 0.97, 1)) * 0.02).toFixed(3);
+      } else {
+        // Mobile: keep the pinned hero fully opaque and dark through the dolly;
+        // hand off to ivory only at the final unpin beat so no white strip flashes
+        wash.style.opacity = ease(cut(v, 0.985, 1)).toFixed(3);
+        hero.style.opacity = '1';
+      }
       heroDolly.inside = v > 0.72;
       if (view) view.frame(v); else paintPlates(v);
     }
@@ -2561,8 +2591,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false
       });
 
+      // Raise architecture in the mobile frame (~reduce empty upper black by ~35–40%)
+      // without changing geometry, materials, or desktop buildView.
+      var FRAME_Y = 3.55;
+
       function add(mesh, x, y, z) {
-        mesh.position.set(x, y, z);
+        mesh.position.set(x, y + FRAME_Y, z);
         scene.add(mesh);
         return mesh;
       }
@@ -2649,28 +2683,32 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       var hemi = new THREE.HemisphereLight(0xF0E6D6, 0x1A1510, 0.42);
       scene.add(hemi);
       var key = new THREE.DirectionalLight(0xF5E6D0, 0.72);
-      key.position.set(-5.5, 16, 14);
+      key.position.set(-5.5, 16 + FRAME_Y, 14);
       scene.add(key);
       var fill = new THREE.DirectionalLight(0xC8B8A0, 0.28);
-      fill.position.set(7, 8, 6);
+      fill.position.set(7, 8 + FRAME_Y, 6);
       scene.add(fill);
       var portalLit = new THREE.PointLight(0xE8C89A, 28, 36, 2);
-      portalLit.position.set(0, 4.2, -38);
+      portalLit.position.set(0, 4.2 + FRAME_Y, -38);
       scene.add(portalLit);
       var aisle = new THREE.PointLight(0xD4B890, 12, 22, 2);
-      aisle.position.set(0, 5.5, -2);
+      aisle.position.set(0, 5.5 + FRAME_Y, -2);
       scene.add(aisle);
 
-      var camZ = 12, camY = 3.0;
+      // Camera sits slightly above the look target so the corridor rises into the
+      // upper half; vertical travel is intentionally small so empty black does not
+      // return mid-dolly. Vanishing point stays on the midline for the headline.
+      var camZ = 12, camY = 3.55 + FRAME_Y * 0.18;
+      var lookY = 2.55;
 
       function frame(v) {
         var e = ease(v);
         camZ = 12 - e * 48;
-        camY = 3.0 - e * 0.7;
-        camera.fov = 48 - e * 6;
+        camY = (3.55 + FRAME_Y * 0.18) - e * 0.18;
+        camera.fov = 50 - e * 5;
         camera.updateProjectionMatrix();
         // Keep end wash restrained so type stays readable over the scene
-        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.42, 1)) * 0.82);
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.55, 1)) * 0.62);
         scene.background.copy(scene.fog.color);
         scene.fog.near = 22 - e * 5;
         scene.fog.far = 88 - e * 36;
@@ -2678,8 +2716,8 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       }
 
       function render(t) {
-        camera.position.set(Math.sin(t * 0.05) * 0.05, camY, camZ);
-        camera.lookAt(0, 3.15, -70);
+        camera.position.set(Math.sin(t * 0.03) * 0.03, camY, camZ);
+        camera.lookAt(0, lookY, -70);
         renderer.render(scene, camera);
       }
 
@@ -2690,6 +2728,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
         camera.aspect = w / Math.max(1, h);
+        // Shift projection so architecture sits higher (~15% of viewport) while the
+        // vanishing point remains on the center axis under the headline.
+        var bias = Math.round(h * 0.18);
+        camera.setViewOffset(w, h, 0, bias, w, h);
         camera.updateProjectionMatrix();
       }
 
@@ -2733,6 +2775,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       onLeave: function () { settle(1); if (nav) onScroll(); },
       onLeaveBack: function () { settle(0); if (nav) onScroll(); }
     });
+
+    // Mobile: keep pin metrics in sync when the browser chrome resizes the visual viewport
+    if (!isDesktopHero) {
+      var vvTimer;
+      function onMobileViewport() {
+        clearTimeout(vvTimer);
+        vvTimer = setTimeout(function () {
+          if (view) view.size();
+          if (ST) ST.refresh();
+        }, 120);
+      }
+      window.addEventListener('resize', onMobileViewport, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onMobileViewport, { passive: true });
+      }
+    }
 
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (en) {
