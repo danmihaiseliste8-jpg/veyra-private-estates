@@ -421,10 +421,21 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     transform:none;
     will-change:auto;
   }
+  /* Minimal editorial cue — thin static line, no label / bounce */
   .hero .scroll-cue{
-    opacity:1;
+    gap:0;
+    opacity:.42;
     will-change:opacity;
+    pointer-events:none;
   }
+  .hero .scroll-cue span{display:none!important;}
+  .hero .scroll-cue i{
+    width:1px;
+    height:18px;
+    background:rgba(241,235,225,.5);
+    overflow:visible;
+  }
+  .hero .scroll-cue i::after{display:none!important;animation:none!important;}
 }
 .hero__canvas{
   position:absolute;inset:0;width:100%;height:100%;opacity:0;
@@ -512,7 +523,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   display:flex;flex-wrap:wrap;gap:1.4rem 2.6rem;align-items:center;justify-content:space-between;
   padding-top:1.4rem;border-top:1px solid rgba(241,235,225,.18);
 }
-/* Mobile foot overrides must follow the base .hero__foot rule (cascade) */
+/* Mobile foot overrides must follow the base .hero__foot / .scroll-cue rules (cascade) */
 @media(max-width:759px){
   .hero__meta{display:none!important;}
   .hero__foot{
@@ -524,6 +535,19 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     opacity:1;
     transform:none;
   }
+  .hero .scroll-cue{
+    gap:0;
+    opacity:.42;
+    pointer-events:none;
+  }
+  .hero .scroll-cue span{display:none!important;}
+  .hero .scroll-cue i{
+    width:1px;
+    height:18px;
+    background:rgba(241,235,225,.5);
+    overflow:visible;
+  }
+  .hero .scroll-cue i::after{display:none!important;animation:none!important;}
 }
 .hero__meta{display:flex;flex-wrap:wrap;gap:1rem 2.4rem;}
 .hero__meta span{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(241,235,225,.55);}
@@ -1692,9 +1716,13 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       el.style.transform = 'none';
       el.style.opacity = '1';
     });
-    // Mobile: metadata is display:none; keep the scroll cue visible at rest
+    // Mobile: metadata absent; keep the minimal cue subtly visible at rest
     var cue = $('.scroll-cue');
-    if (cue) { cue.style.opacity = '1'; cue.style.pointerEvents = ''; cue.style.transform = 'none'; }
+    if (cue) {
+      cue.style.opacity = window.innerWidth < 760 ? '0.42' : '1';
+      cue.style.pointerEvents = window.innerWidth < 760 ? 'none' : '';
+      cue.style.transform = 'none';
+    }
     var foot = $('.hero__foot');
     if (foot) { foot.style.opacity = '1'; foot.style.transform = 'none'; }
   }
@@ -1799,11 +1827,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       .to('#nav', { opacity: 1, duration: 0.9 }, 0.55);
 
     // Desktop: meta + cue enter with the intro (unchanged).
-    // Mobile: metadata is CSS-removed; cue is visible at load and fades via paint().
+    // Mobile: minimal cue at low opacity; fades via paint() as dolly engages.
     if (window.innerWidth >= 760) {
       tl.to([meta, cue].filter(Boolean), { autoAlpha: 1, duration: 1, stagger: 0.1 }, 0.7);
     } else {
-      if (cue) { cue.style.opacity = '1'; cue.style.pointerEvents = ''; cue.style.transform = 'none'; }
+      if (cue) { cue.style.opacity = '0.42'; cue.style.pointerEvents = 'none'; cue.style.transform = 'none'; }
     }
 
     tl.add(function () { if (ST) ST.refresh(); });
@@ -2390,12 +2418,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         // Foot stays present for the cue only — no metadata reveal / spacing
         foot.style.opacity = '1';
         foot.style.transform = 'none';
-        // Scroll cue: visible at rest, fades out as soon as dolly engages
+        // Minimal cue: subtle at rest, gone almost immediately after engagement
         var cue = $('.scroll-cue');
         if (cue) {
-          var cueOp = 1 - ease(cut(v, 0.015, 0.1));
+          var cueOp = 0.42 * (1 - ease(cut(v, 0.01, 0.07)));
           cue.style.opacity = cueOp.toFixed(3);
-          cue.style.pointerEvents = cueOp <= 0.001 ? 'none' : '';
+          cue.style.pointerEvents = 'none';
         }
       }
       heroDolly.inside = v > 0.72;
