@@ -308,7 +308,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   /* top pad clears the fixed nav so the large title never sits underneath it */
   padding-block:calc(var(--nav-h) + clamp(2.5rem,5vw,4rem)) clamp(2rem,4vw,3.2rem);
 }
-@media(max-height:820px){
+@media(min-width:760px) and (max-height:820px){
   .hero__inner{gap:clamp(1.25rem,3.2vh,2.4rem);}
   .hero__foot{margin-top:clamp(1.25rem,3.2vh,2.6rem);}
 }
@@ -328,6 +328,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .hero__media.is-fallback .hero__interior{
   opacity:1;transform:scale(1.06);
 }
+/* Copy spans: desktop long-form by default; mobile media below swaps them */
+.hero__copy-m{display:none;}
+.hero__copy-d{display:inline;}
 /* Mobile: show the static plate immediately (no wait for JS / Three) */
 @media(max-width:759px){
   .hero__interior{opacity:1;transform:scale(1.06);object-position:50% 22%;}
@@ -355,6 +358,66 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   .hero__wash{
     min-height:100%;
   }
+  /*
+    Mobile hero headline — lighter first-viewport hierarchy.
+    Copy unchanged; two-part composition kept as two lines (not word-wrapped).
+    Desktop title rules (≥900px / base clamp) are untouched.
+  */
+  .hero__title{
+    font-size:clamp(2.7rem,10vw,3.65rem);
+    line-height:.92;
+    letter-spacing:-.045em;
+    max-width:11.5em;
+  }
+  .hero__title .mask-line{padding-bottom:.04em;}
+  .hero__title .mask-line + .mask-line{
+    margin-top:.14em;
+  }
+  /* Second line reads as one italic phrase on mobile */
+  .hero__title .mask-line:last-child > span{font-style:italic;}
+  .hero__title .mask-line:last-child em{font-style:italic;}
+
+  /* Shorter supporting copy + quieter hierarchy */
+  .hero{
+    --hero-headline-to-copy:28px;
+    --hero-copy-to-cta:26px;
+    --hero-cta-to-meta:72px;
+    justify-content:flex-end;
+    padding-bottom:clamp(1.25rem,3.5vh,2rem);
+  }
+  .hero__copy-d{display:none;}
+  .hero__copy-m{display:inline;}
+  .hero__aside{
+    gap:var(--hero-copy-to-cta);
+    margin-top:var(--hero-headline-to-copy);
+  }
+  .hero__copy{
+    max-width:33ch;
+    font-size:clamp(.96rem,3.8vw,1.04rem);
+    line-height:1.55;
+    color:rgba(241,235,225,.62);
+    text-shadow:0 1px 18px rgba(11,9,7,.55),0 0 1px rgba(11,9,7,.4);
+  }
+  .hero__cta{
+    min-height:48px;
+    padding:0 1.5rem;
+    font-size:.64rem;
+    letter-spacing:.2em;
+    border-color:rgba(241,235,225,.34);
+    align-self:start;
+    box-sizing:border-box;
+  }
+  .hero__cta .arw{margin-left:.15em;}
+  /* Foot (meta + cue) sits low; whole block reveals with dolly progress */
+  .hero__foot{
+    margin-top:var(--hero-cta-to-meta);
+    padding-top:1rem;
+    border-top-color:rgba(241,235,225,.1);
+    flex-shrink:0;
+    opacity:0;
+    transform:translate3d(0,16px,0);
+    will-change:opacity,transform;
+  }
 }
 .hero__canvas{
   position:absolute;inset:0;width:100%;height:100%;opacity:0;
@@ -379,7 +442,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .hero__title .mask-line{padding-bottom:.115em;}
 .hero__grid{display:grid;gap:clamp(2rem,4vw,3rem);}
 .hero__aside{display:grid;gap:1.8rem;}
-.hero__aside p{color:rgba(241,235,225,.68);font-size:1rem;line-height:1.66;max-width:32ch;}
+.hero__aside p,.hero__copy{color:rgba(241,235,225,.68);font-size:1rem;line-height:1.66;max-width:32ch;}
+/* Desktop paragraph only — must not override the ≤759px span swap above */
+@media(min-width:760px){
+  .hero__copy-m{display:none;}
+  .hero__copy-d{display:inline;}
+}
 @media(min-width:900px){
   /* editorial stack — centred in the usable hero field, foot pinned below */
   .hero{
@@ -1024,14 +1092,17 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         <span class="mask-line"><span><em>Quietly</em> represented.</span></span>
       </h1>
       <div class="hero__aside">
-        <p data-rv="up">A private advisory for buyers and owners of architecturally significant residences — where architecture, location and long-term value intersect.</p>
-        <a class="btn" href="#contact" data-rv="up">Request a consultation <i class="arw" aria-hidden="true"></i></a>
+        <p class="hero__copy" data-rv="up">
+          <span class="hero__copy-d">A private advisory for buyers and owners of architecturally significant residences — where architecture, location and long-term value intersect.</span>
+          <span class="hero__copy-m">Private advisory for architecturally significant residences in Miami, Palm Beach and New York.</span>
+        </p>
+        <a class="btn hero__cta" href="#contact" data-rv="up">Request a consultation <i class="arw" aria-hidden="true"></i></a>
       </div>
     </div>
   </div>
 
   <div class="hero__foot shell">
-    <div class="hero__meta" data-rv="fade">
+    <div class="hero__meta" id="heroMeta" data-rv="fade">
       <span>Established 2009</span>
       <span>Four residences represented</span>
       <span>25.79° N / 80.13° W</span>
@@ -1601,6 +1672,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       el.style.transform = 'none';
       el.style.opacity = '1';
     });
+    // Mobile foot starts CSS-hidden for the progress reveal; reduced-motion must show it
+    var foot = $('.hero__foot');
+    if (foot) { foot.style.opacity = '1'; foot.style.transform = 'none'; }
   }
 
   /* ----------------------------------------------------------
@@ -1687,7 +1761,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 
     G.set('#nav', { opacity: 0 });
 
-    G.timeline({ defaults: { ease: 'power3.out' } })
+    var tl = G.timeline({ defaults: { ease: 'power3.out' } })
       .fromTo(title,
         { autoAlpha: 0, y: 28 },
         { autoAlpha: 1, y: 0, duration: 1.55 },
@@ -1700,9 +1774,18 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         { autoAlpha: 0, y: 16 },
         { autoAlpha: 1, y: 0, duration: 1.15 },
         0.5)
-      .to([meta, cue].filter(Boolean), { autoAlpha: 1, duration: 1, stagger: 0.1 }, 0.7)
-      .to('#nav', { opacity: 1, duration: 0.9 }, 0.55)
-      .add(function () { if (ST) ST.refresh(); });
+      .to('#nav', { opacity: 1, duration: 0.9 }, 0.55);
+
+    // Desktop: meta/cue enter with the intro. Mobile: clear .js [data-rv] opacity:0
+    // so the foot progress reveal (paint) can show them; foot itself starts hidden.
+    if (window.innerWidth >= 760) {
+      tl.to([meta, cue].filter(Boolean), { autoAlpha: 1, duration: 1, stagger: 0.1 }, 0.7);
+    } else {
+      if (meta) { meta.style.opacity = '1'; meta.style.transform = 'none'; }
+      if (cue) { cue.style.opacity = '1'; cue.style.transform = 'none'; }
+    }
+
+    tl.add(function () { if (ST) ST.refresh(); });
 
     if (hero) hero.setAttribute('data-ready', 'true');
   }
@@ -2260,9 +2343,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       var out = ease(cut(v, 0, 0.28));
       inner.style.opacity = (1 - out).toFixed(3);
       inner.style.transform = 'translate3d(0,' + (-out * 7).toFixed(2) + 'vh,0)';
-      foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
       media.style.setProperty('--veil', (1 - cut(v, 0.35, 0.82) * 0.94).toFixed(3));
       if (isDesktopHero) {
+        foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
         // Desktop: ivory wash lands as the camera settles (timing unchanged).
         // At wash ≥ ~1 the GL frame is fully covered — render is suspended in loop.
         wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
@@ -2282,6 +2365,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         }
         wash.style.opacity = '0';
         hero.style.opacity = '1';
+        // Foot (meta + cue) reveals with early dolly progress, then fades at handoff
+        var metaReveal = ease(Math.max(0, Math.min(1, cut(v, 0.05, 0.2))));
+        var metaOut = ease(cut(v, 0.78, 0.92));
+        foot.style.opacity = (metaReveal * (1 - metaOut)).toFixed(3);
+        foot.style.transform = 'translate3d(0,' + ((1 - metaReveal) * 16).toFixed(1) + 'px,0)';
       }
       heroDolly.inside = v > 0.72;
       // Skip camera/fog updates once the desktop wash fully covers the canvas;
@@ -2886,14 +2974,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       slab(0.3, 6.8, 1.7, bronze, 2.15, 3.5, faceZ - 0.3);
       boxBev(4.7, 0.42, 1.8, stone, 0, 7.05, faceZ - 0.25, 0.04);
       slab(4.4, 0.1, 1.6, bronzeSoft, 0, 6.78, faceZ - 0.2);
-      slab(4.2, 0.05, 1.35, cove, 0, 6.68, faceZ - 0.4);
+      slab(4.2, 0.04, 1.35, bronzeSoft, 0, 6.68, faceZ - 0.4);
       slab(4.4, 0.1, 1.45, stoneDeep, 0, 0.4, faceZ - 0.4);
       slab(0.08, 6.5, 0.08, bronzeSoft, -2.0, 3.45, faceZ + 0.3);
       slab(0.08, 6.5, 0.08, bronzeSoft, 2.0, 3.45, faceZ + 0.3);
-      // Lit aperture + recess (keeps portal as secondary focus; muted vs window glass)
+      // Lit aperture — soft vertical luminous plane (no MeshBasic circular hotspot)
+      var portalGlow = new THREE.MeshStandardMaterial({
+        color: 0x16120E, roughness: 0.92, metalness: 0.02,
+        emissive: 0x9A7A4E, emissiveIntensity: 0.08
+      });
+      var portalWash = new THREE.MeshStandardMaterial({
+        color: 0x14110D, roughness: 0.95, metalness: 0.0,
+        emissive: 0x7A623E, emissiveIntensity: 0.045
+      });
       slab(3.9, 6.1, 0.75, recessMat, 0, 3.35, faceZ - 1.45);
-      slab(3.3, 5.4, 0.16, plasterBright, 0, 3.35, faceZ - 2.2);
-      slab(2.7, 0.07, 0.1, cove, 0, 5.85, faceZ - 2.05);
+      slab(3.15, 5.55, 0.1, portalWash, 0, 3.4, faceZ - 2.2);
+      slab(2.55, 4.7, 0.08, portalGlow, 0, 3.4, faceZ - 2.55);
 
       // Interior — short plaster corridor + end wall (desktop-derived, truncated)
       slab(0.38, 6.8, 14, plaster, -2.35, 3.5, -38.5);
@@ -2933,10 +3029,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       warm.position.set(12, 10, 8); scene.add(warm);
       var front = new THREE.DirectionalLight(new THREE.Color(0xF0E4D0), 0.32);
       front.position.set(0, 7, 26); scene.add(front);
-      var spill = new THREE.PointLight(new THREE.Color(0xFFD399), tierA ? 95 : 70, 42, 1.7);
-      spill.position.set(0, 3.4 + FRAME_Y, faceZ - 0.8); scene.add(spill);
-      var fill = new THREE.PointLight(new THREE.Color(0xFFE4B8), tierA ? 70 : 48, 36, 1.75);
-      fill.position.set(0, 4.8 + FRAME_Y, -42); scene.add(fill);
+      // Portal spill — deeper, softer, broader (secondary to headline; no camera-path hotspot)
+      var spill = new THREE.PointLight(new THREE.Color(0xC9A878), tierA ? 18 : 13, 64, 2.35);
+      spill.position.set(0, 3.7 + FRAME_Y, faceZ - 3.1); scene.add(spill);
+      var fill = new THREE.PointLight(new THREE.Color(0xC4A882), tierA ? 28 : 20, 44, 2.05);
+      fill.position.set(0, 4.4 + FRAME_Y, -44); scene.add(fill);
       if (tierA) {
         var upL = new THREE.PointLight(new THREE.Color(0xF0D2A0), 22, 12, 2);
         upL.position.set(-colX, 1.2 + FRAME_Y, 10); scene.add(upL);
