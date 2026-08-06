@@ -1859,6 +1859,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   /* ----------------------------------------------------------
      Services accordion
      ---------------------------------------------------------- */
+  // Expanding/collapsing changes document height above the pinned portfolio.
+  // ScrollTrigger.refresh() is required so pin start/end stay correct, but a
+  // bare refresh re-anchors scroll into the portfolio pin — restore Y after.
+  function refreshSTKeepScroll() {
+    if (!ST) return;
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    ST.refresh();
+    window.scrollTo(0, y);
+    requestAnimationFrame(function () { window.scrollTo(0, y); });
+  }
   function collapse(btn) {
     var item = btn.closest('.svc__item');
     var panel = document.getElementById(btn.getAttribute('aria-controls'));
@@ -1866,7 +1876,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     item.classList.remove('is-open');
     if (animate) {
       G.set(panel, { height: panel.offsetHeight });
-      G.to(panel, { height: 0, duration: 0.6, ease: 'power3.inOut', onComplete: function () { if (ST) ST.refresh(); } });
+      G.to(panel, { height: 0, duration: 0.6, ease: 'power3.inOut', onComplete: refreshSTKeepScroll });
     } else { panel.style.height = '0px'; }
   }
   function expand(btn) {
@@ -1877,7 +1887,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     if (animate) {
       G.to(panel, {
         height: panel.firstElementChild.offsetHeight, duration: 0.75, ease: 'power3.inOut',
-        onComplete: function () { panel.style.height = 'auto'; if (ST) ST.refresh(); }
+        onComplete: function () { panel.style.height = 'auto'; refreshSTKeepScroll(); }
       });
     } else { panel.style.height = 'auto'; }
   }
