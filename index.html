@@ -2599,156 +2599,160 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       return { frame: frame, render: render, size: size };
     }
 
-    /* Lightweight mobile scene — separate from desktop buildView (never called ≥760px) */
+    /* Mobile LOD of desktop buildView — same architecture, reduced cost (never ≥760px) */
     function buildMobileView(THREE, canvas) {
+      // Capability tiers (width alone is not used — constrained devices never reach here)
+      var mem = navigator.deviceMemory;
+      var cores = navigator.hardwareConcurrency;
+      var tierA = (typeof mem === 'number' && mem >= 6) ||
+        (typeof cores === 'number' && cores >= 8);
+      var mapSize = tierA ? 256 : 128;
+      var colPairs = tierA ? 7 : 5;
+      var cofferRows = tierA ? 6 : 4;
+      var cofferCols = tierA ? 3 : 2;
+      var renderScale = tierA ? 0.96 : 0.88;
+      var bevelSeg = tierA ? 2 : 1;
+
       var renderer = new THREE.WebGLRenderer({
-        canvas: canvas, antialias: false, alpha: false, powerPreference: 'low-power'
+        canvas: canvas, antialias: !!tierA, alpha: false, powerPreference: 'low-power'
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.98;
+      renderer.toneMappingExposure = 1.08;
       if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
 
       var DUSK = new THREE.Color(0x100E0C), IVORY = new THREE.Color(0xF1EBE1);
       var scene = new THREE.Scene();
-      scene.background = DUSK.clone();
-      scene.fog = new THREE.Fog(DUSK.clone(), 22, 88);
-      var camera = new THREE.PerspectiveCamera(48, 1, 0.2, 200);
+      scene.fog = new THREE.Fog(DUSK.clone(), 28, 110);
+      scene.background = scene.fog.color;
+      var camera = new THREE.PerspectiveCamera(48, 1, 0.2, 220);
 
-      // Tiny procedural maps (64–128px) — color, bump, roughness, contact; reused
-      function canvasTex(draw, size, repeatU, repeatV, srgb) {
-        var s = size || 128;
+      // Compact maps adapted from desktop limestone/stone language (shared across mats)
+      function makeMap(draw, size, ru, rv, srgb) {
+        var s = size || mapSize;
         var cv = document.createElement('canvas');
         cv.width = cv.height = s;
         draw(cv.getContext('2d'), s);
         var tex = new THREE.CanvasTexture(cv);
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(repeatU == null ? 2 : repeatU, repeatV == null ? 2 : repeatV);
+        tex.repeat.set(ru == null ? 1.4 : ru, rv == null ? 2.2 : rv);
         tex.anisotropy = 1;
         if (srgb && 'colorSpace' in tex && THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
         return tex;
       }
-      function softMap(baseHex, grain, size, ru, rv) {
-        return canvasTex(function (ctx, s) {
-          var n, x, y;
-          ctx.fillStyle = '#' + ('000000' + baseHex.toString(16)).slice(-6);
-          ctx.fillRect(0, 0, s, s);
-          for (n = 0; n < grain; n++) {
-            x = Math.random() * s; y = Math.random() * s;
-            ctx.fillStyle = 'rgba(0,0,0,' + (0.012 + Math.random() * 0.03) + ')';
-            ctx.fillRect(x, y, 1 + Math.random() * 2.5, 1 + Math.random() * 2);
-          }
-        }, size, ru, rv, true);
+      var limestoneMap = makeMap(function (ctx, s) {
+        var i, x, y, w, h;
+        ctx.fillStyle = '#E6DCCB'; ctx.fillRect(0, 0, s, s);
+        for (i = 0; i < (tierA ? 520 : 280); i++) {
+          x = Math.random() * s; y = Math.random() * s;
+          ctx.fillStyle = 'rgba(120,100,70,' + (0.03 + Math.random() * 0.07) + ')';
+          ctx.fillRect(x, y, 1 + Math.random() * 3, 1 + Math.random() * 2);
+        }
+        for (i = 0; i < (tierA ? 28 : 16); i++) {
+          y = Math.random() * s;
+          ctx.strokeStyle = 'rgba(90,75,55,' + (0.04 + Math.random() * 0.06) + ')';
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(s, y + (Math.random() - 0.5) * 8); ctx.stroke();
+        }
+        for (i = 0; i < (tierA ? 12 : 7); i++) {
+          x = Math.random() * s; y = Math.random() * s;
+          w = 16 + Math.random() * 48; h = 6 + Math.random() * 14;
+          ctx.fillStyle = 'rgba(160,140,110,0.08)';
+          ctx.fillRect(x, y, w, h);
+        }
+      }, mapSize, 1.4, 2.2, true);
+      var darkStoneMap = makeMap(function (ctx, s) {
+        var i;
+        ctx.fillStyle = '#1A1713'; ctx.fillRect(0, 0, s, s);
+        for (i = 0; i < (tierA ? 700 : 380); i++) {
+          ctx.fillStyle = 'rgba(55,48,40,' + (0.05 + Math.random() * 0.12) + ')';
+          ctx.fillRect(Math.random() * s, Math.random() * s, 2, 2);
+        }
+      }, Math.min(mapSize, 128), 3.2, 3.2, true);
+      var stoneBump = makeMap(function (ctx, s) {
+        var n, g;
+        ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, s, s);
+        for (n = 0; n < (tierA ? 180 : 100); n++) {
+          g = 110 + Math.random() * 40;
+          ctx.fillStyle = 'rgba(' + g + ',' + g + ',' + g + ',' + (0.08 + Math.random() * 0.16) + ')';
+          ctx.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 3, 1 + Math.random() * 3);
+        }
+      }, Math.min(mapSize, 128), 2.0, 2.0, false);
+      var bronzeRough = makeMap(function (ctx, s) {
+        var i, y;
+        ctx.fillStyle = '#7A7A7A'; ctx.fillRect(0, 0, s, s);
+        for (i = 0; i < s; i++) {
+          y = i + (Math.random() - 0.5) * 0.5;
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.02 + Math.random() * 0.04) + ')';
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(s, y); ctx.stroke();
+        }
+      }, 64, 2.2, 0.6, false);
+      var contactTex = makeMap(function (ctx, s) {
+        var g = ctx.createRadialGradient(s * 0.5, s * 0.5, 0, s * 0.5, s * 0.5, s * 0.48);
+        g.addColorStop(0, 'rgba(0,0,0,0.55)');
+        g.addColorStop(0.35, 'rgba(0,0,0,0.2)');
+        g.addColorStop(0.72, 'rgba(0,0,0,0.05)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
+      }, 64, 1, 1, false);
+
+      function matt(hex, rough, emissive, emInt, map) {
+        return new THREE.MeshStandardMaterial({
+          color: new THREE.Color(hex), map: map || null,
+          bumpMap: map ? stoneBump : null, bumpScale: map ? 0.03 : 0,
+          roughness: rough, metalness: 0.03,
+          emissive: new THREE.Color(emissive || 0x000000), emissiveIntensity: emInt || 0
+        });
       }
-      function grayNoise(grain, contrast, size, ru, rv) {
-        return canvasTex(function (ctx, s) {
-          var n, g;
-          ctx.fillStyle = '#808080';
-          ctx.fillRect(0, 0, s, s);
-          for (n = 0; n < grain; n++) {
-            g = 110 + Math.random() * 40 * (contrast || 1);
-            ctx.fillStyle = 'rgba(' + g + ',' + g + ',' + g + ',' + (0.08 + Math.random() * 0.18) + ')';
-            ctx.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 3, 1 + Math.random() * 3);
-          }
-        }, size, ru, rv, false);
-      }
-      function brushedGray(size, ru, rv) {
-        return canvasTex(function (ctx, s) {
-          var i, y;
-          ctx.fillStyle = '#7A7A7A';
-          ctx.fillRect(0, 0, s, s);
-          for (i = 0; i < s; i++) {
-            y = i + (Math.random() - 0.5) * 0.6;
-            ctx.strokeStyle = 'rgba(255,255,255,' + (0.02 + Math.random() * 0.05) + ')';
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(s, y); ctx.stroke();
-            if (i % 3 === 0) {
-              ctx.strokeStyle = 'rgba(0,0,0,' + (0.03 + Math.random() * 0.05) + ')';
-              ctx.beginPath(); ctx.moveTo(0, y + 0.4); ctx.lineTo(s, y + 0.4); ctx.stroke();
-            }
-          }
-        }, size, ru, rv, false);
-      }
-      function contactMap(size) {
-        return canvasTex(function (ctx, s) {
-          var g = ctx.createRadialGradient(s * 0.5, s * 0.5, 0, s * 0.5, s * 0.5, s * 0.5);
-          g.addColorStop(0, 'rgba(0,0,0,0.62)');
-          g.addColorStop(0.28, 'rgba(0,0,0,0.28)');
-          g.addColorStop(0.62, 'rgba(0,0,0,0.08)');
-          g.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, s, s);
-        }, size || 64, 1, 1, false);
+      function metal(hex, rough, metalness, emissive, emInt) {
+        return new THREE.MeshStandardMaterial({
+          color: new THREE.Color(hex), roughness: rough, roughnessMap: bronzeRough,
+          metalness: metalness == null ? 0.86 : metalness,
+          emissive: new THREE.Color(emissive || 0x000000), emissiveIntensity: emInt || 0
+        });
       }
 
-      var plasterMap = softMap(0xE8DFD0, 180, 128, 2.0, 2.0);
-      var limestoneMap = softMap(0xD4C6B0, 240, 128, 1.35, 3.0);
-      var floorMap = softMap(0x141210, 140, 128, 2.8, 4.6);
-      var bronzeMap = softMap(0x6E5536, 70, 64, 1.4, 1.4);
-      var stoneBump = grayNoise(220, 1, 128, 2.2, 2.2);
-      var stoneRough = grayNoise(160, 0.85, 128, 1.8, 1.8);
-      var floorBump = grayNoise(120, 0.7, 64, 3.2, 5.0);
-      var floorRough = grayNoise(100, 0.9, 64, 2.6, 4.2);
-      var bronzeRough = brushedGray(64, 2.4, 0.55);
-      var contactTex = contactMap(64);
-
-      var plaster = new THREE.MeshStandardMaterial({
-        color: 0xEDE6DA, map: plasterMap, bumpMap: stoneBump, bumpScale: 0.028,
-        roughness: 0.82, roughnessMap: stoneRough, metalness: 0.02,
-        emissive: 0x1E1A14, emissiveIntensity: 0.02
+      // Desktop material language — warmer limestone lift, restrained bronze
+      var stone = matt(0xEDE4D4, 0.7, 0x3A2E20, 0.1, limestoneMap);
+      var stoneDeep = matt(0xD2C6B2, 0.78, 0x2A2218, 0.06, limestoneMap);
+      var stonePale = matt(0xF5EEE3, 0.58, 0x4A3A28, 0.12, limestoneMap);
+      var groove = matt(0xC4B6A0, 0.88, 0x1A1410, 0.04);
+      var bronze = metal(0xA07A45, 0.32, 0.88, 0x5A3814, 0.22);
+      var bronzeSoft = metal(0xC4A066, 0.42, 0.76, 0x4A3018, 0.14);
+      var darkFloor = matt(0x171410, 0.55, 0x000000, 0, darkStoneMap);
+      darkFloor.metalness = 0.18;
+      var plaster = matt(0xF2ECE1, 0.7, 0xE8DFD0, 0.07);
+      var plasterBright = matt(0xF8F2E8, 0.62, 0xF0E8DA, 0.14);
+      var glass = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0x1A2030), roughness: 0.08, metalness: 0.5,
+        emissive: new THREE.Color(0xE8C888), emissiveIntensity: 0.48
       });
-      var limestone = new THREE.MeshStandardMaterial({
-        color: 0xD8CBB6, map: limestoneMap, bumpMap: stoneBump, bumpScale: 0.04,
-        roughness: 0.76, roughnessMap: stoneRough, metalness: 0.03,
-        emissive: 0x16120E, emissiveIntensity: 0.015
-      });
-      var limestoneSoft = new THREE.MeshStandardMaterial({
-        color: 0xE4D8C6, map: plasterMap, bumpMap: stoneBump, bumpScale: 0.024,
-        roughness: 0.72, roughnessMap: stoneRough, metalness: 0.02
-      });
-      var bronze = new THREE.MeshStandardMaterial({
-        color: 0x5F4A30, map: bronzeMap, roughness: 0.55, roughnessMap: bronzeRough,
-        metalness: 0.76, emissive: 0x1A1208, emissiveIntensity: 0.045
-      });
-      var bronzeSoft = new THREE.MeshStandardMaterial({
-        color: 0x6E5A3C, roughness: 0.62, roughnessMap: bronzeRough, metalness: 0.68,
-        emissive: 0x140E08, emissiveIntensity: 0.03
-      });
-      var floorMat = new THREE.MeshStandardMaterial({
-        color: 0x12100E, map: floorMap, bumpMap: floorBump, bumpScale: 0.03,
-        roughness: 0.5, roughnessMap: floorRough, metalness: 0.16,
-        emissive: 0x000000, emissiveIntensity: 0
-      });
-      var portalVoid = new THREE.MeshStandardMaterial({
-        color: 0x080706, roughness: 0.92, metalness: 0.04
-      });
-      var portalGlow = new THREE.MeshStandardMaterial({
-        color: 0x16120E, roughness: 0.7, metalness: 0.08,
-        emissive: 0xA88858, emissiveIntensity: 0.22
-      });
+      var cove = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xFFE4B0) });
       var recessMat = new THREE.MeshStandardMaterial({
-        color: 0x1A1612, roughness: 0.88, metalness: 0.02,
-        emissive: 0x000000, emissiveIntensity: 0
-      });
-      var jointMat = new THREE.MeshBasicMaterial({
-        color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false
+        color: 0x1A1612, roughness: 0.9, metalness: 0.02
       });
       var contactMat = new THREE.MeshBasicMaterial({
-        map: contactTex, transparent: true, opacity: 0.62, depthWrite: false
+        map: contactTex, transparent: true, opacity: 0.5, depthWrite: false
       });
 
-      // Raise architecture in the mobile frame (~reduce empty upper black by ~35–40%)
-      // without changing geometry, materials, or desktop buildView.
-      var FRAME_Y = 3.55;
+      // Raise architecture in the tall mobile frame (desktop composition adapted vertically)
+      var FRAME_Y = 3.2;
 
       function add(mesh, x, y, z) {
         mesh.position.set(x, y + FRAME_Y, z);
         scene.add(mesh);
         return mesh;
       }
-      // Low-cost chamfered box — bevelSegments 1–2 on visible architecture only
+      function slab(w, h, d, mat, x, y, z) {
+        return add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat), x, y, z);
+      }
+      function deck(w, d, mat, y, z) {
+        var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+        m.rotation.x = -Math.PI / 2;
+        return add(m, 0, y, z);
+      }
       function bevelGeo(w, h, d, bev, segs) {
-        bev = Math.min(bev == null ? 0.04 : bev, w * 0.2, h * 0.2, d * 0.2);
-        segs = segs == null ? 1 : segs;
+        bev = Math.min(bev == null ? 0.04 : bev, w * 0.18, h * 0.18, d * 0.18);
+        segs = segs == null ? bevelSeg : segs;
         var hw = Math.max(0.01, w * 0.5 - bev);
         var hh = Math.max(0.01, h * 0.5 - bev);
         var depth = Math.max(0.02, d - 2 * bev);
@@ -2759,182 +2763,218 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         shape.lineTo(-hw, hh);
         shape.closePath();
         var geo = new THREE.ExtrudeGeometry(shape, {
-          depth: depth,
-          bevelEnabled: true,
-          bevelThickness: bev,
-          bevelSize: bev,
-          bevelOffset: 0,
-          bevelSegments: segs,
-          curveSegments: 1
+          depth: depth, bevelEnabled: true, bevelThickness: bev, bevelSize: bev,
+          bevelOffset: 0, bevelSegments: segs, curveSegments: 1
         });
         geo.translate(0, 0, -depth * 0.5);
         geo.computeVertexNormals();
         return geo;
       }
-      function box(w, h, d, mat, x, y, z, bev, segs) {
-        var geo = bev && bev > 0
-          ? bevelGeo(w, h, d, bev, segs)
-          : new THREE.BoxGeometry(w, h, d);
-        return add(new THREE.Mesh(geo, mat), x, y, z);
+      function boxBev(w, h, d, mat, x, y, z, bev) {
+        return add(new THREE.Mesh(bevelGeo(w, h, d, bev, bevelSeg), mat), x, y, z);
       }
       function contactShadow(x, z, sx, sz, opacity) {
-        var m = new THREE.Mesh(new THREE.PlaneGeometry(sx || 1.5, sz || 1.5), contactMat.clone());
-        m.material.opacity = opacity == null ? 0.62 : opacity;
+        var m = new THREE.Mesh(new THREE.PlaneGeometry(sx || 1.6, sz || 1.5), contactMat.clone());
+        m.material.opacity = opacity == null ? 0.5 : opacity;
         m.rotation.x = -Math.PI / 2;
         m.renderOrder = 1;
-        return add(m, x, 0.015, z);
-      }
-      // Softened column: tapered shaft + chamfered capital/base; slight per-instance variation
-      function column(x, z, seed) {
-        var s = 1 + ((seed % 5) - 2) * 0.008;
-        var dx = ((seed % 3) - 1) * 0.03;
-        var matShaft = limestone;
-        var matCap = seed % 2 === 0 ? bronzeSoft : bronze;
-        var shaft = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.38 * s, 0.44 * s, 6.4, 12),
-          matShaft
-        );
-        shaft.geometry.computeVertexNormals();
-        add(shaft, x + dx, 3.55, z);
-        var base = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.58 * s, 0.62 * s, 0.28, 12),
-          limestoneSoft
-        );
-        add(base, x + dx, 0.24, z);
-        var plinth = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.66 * s, 0.7 * s, 0.16, 12),
-          plaster
-        );
-        add(plinth, x + dx, 0.06, z);
-        var neck = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.46 * s, 0.4 * s, 0.22, 12),
-          limestoneSoft
-        );
-        add(neck, x + dx, 6.85, z);
-        var cap = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.62 * s, 0.5 * s, 0.32, 12),
-          matCap
-        );
-        add(cap, x + dx, 7.12, z);
-        var abacus = new THREE.Mesh(
-          bevelGeo(1.22 * s, 0.16, 1.22 * s, 0.045, 2),
-          bronze
-        );
-        add(abacus, x + dx, 7.35, z);
-        // Soft radial contact — replaces hard shadow discs
-        contactShadow(x + dx, z, 1.7 * s, 1.55 * s, 0.58);
+        return add(m, x, 0.02, z);
       }
 
-      // Floor slab with chamfered leading edge mass
-      box(70, 0.2, 110, floorMat, 0, -0.1, -18, 0.04, 1);
-      // Soft aisle ground pool + transverse stone joints
-      contactShadow(0, -12, 5.2, 56, 0.18);
-      var ji;
-      for (ji = 0; ji < 6; ji++) {
-        var jy = new THREE.Mesh(new THREE.PlaneGeometry(22, 0.035), jointMat);
-        jy.rotation.x = -Math.PI / 2;
-        add(jy, 0, 0.012, 4 - ji * 7.5);
-      }
-      var jx = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 58), jointMat);
-      jx.rotation.x = -Math.PI / 2;
-      add(jx, -2.15, 0.012, -10);
-      jx = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 58), jointMat);
-      jx.rotation.x = -Math.PI / 2;
-      add(jx, 2.15, 0.012, -10);
+      // Shared column geos — desktop stacked silhouette, fewer parts / segments
+      var gPlinth = new THREE.BoxGeometry(1.28, 0.28, 1.28);
+      var gBase = new THREE.BoxGeometry(1.08, 0.22, 1.08);
+      var gBand = new THREE.BoxGeometry(0.96, 0.1, 0.96);
+      var gShaft = bevelGeo(0.72, 6.6, 0.72, 0.035, 1);
+      var gFlute = new THREE.BoxGeometry(0.08, 6.4, 0.76);
+      var gCollar = new THREE.BoxGeometry(0.88, 0.14, 0.88);
+      var gCapCyl = new THREE.CylinderGeometry(0.4, 0.38, 0.2, 10);
+      var gCapA = new THREE.BoxGeometry(0.98, 0.18, 0.98);
+      var gCapB = bevelGeo(1.16, 0.26, 1.16, 0.04, bevelSeg);
+      var gCapC = new THREE.BoxGeometry(1.28, 0.12, 1.28);
+      var gCapBand = new THREE.BoxGeometry(0.84, 0.1, 0.84);
 
-      // Facade mass + recessed portal with chamfered lintel / reveals
-      box(24, 15, 2.6, plaster, 0, 7.4, -36.2, 0.07, 2);
-      box(6.4, 9.4, 0.35, recessMat, 0, 4.5, -34.95, 0.04, 1);
-      box(5.9, 8.9, 1.2, portalVoid, 0, 4.45, -34.55);
-      box(6.7, 0.34, 1.65, bronze, 0, 9.15, -34.45, 0.045, 2);
-      box(0.22, 9.0, 1.45, bronzeSoft, -3.15, 4.5, -34.5, 0.03, 1);
-      box(0.22, 9.0, 1.45, bronzeSoft, 3.15, 4.5, -34.5, 0.03, 1);
-      // Narrow bronze sill + inner warm aperture (muted for type)
-      box(6.2, 0.14, 1.35, bronze, 0, 0.12, -34.5, 0.025, 1);
-      box(4.35, 7.1, 0.28, portalGlow, 0, 4.05, -40.4);
-      box(18, 0.42, 3.2, limestoneSoft, 0, 14.15, -36, 0.05, 1);
-
-      // Four column pairs — shared rhythm with micro scale/spacing variation
-      var i, z, seed = 1;
-      for (i = 0; i < 4; i++) {
-        z = 6 - i * 10 + ((i % 2) ? 0.08 : -0.05);
-        column(-5.15, z, seed++);
-        column(5.15, z, seed++);
+      function column(x, z) {
+        add(new THREE.Mesh(gPlinth, stoneDeep), x, 0.14, z);
+        add(new THREE.Mesh(gBase, stone), x, 0.36, z);
+        add(new THREE.Mesh(gBand, bronze), x, 0.5, z);
+        add(new THREE.Mesh(gShaft, stonePale), x, 3.95, z);
+        // Two face flutes (desktop has four — enough for silhouette at phone size)
+        add(new THREE.Mesh(gFlute, groove), x - 0.38, 3.95, z);
+        add(new THREE.Mesh(gFlute, groove), x + 0.38, 3.95, z);
+        add(new THREE.Mesh(gCollar, bronzeSoft), x, 3.95, z);
+        add(new THREE.Mesh(gCapCyl, bronze), x, 7.35, z);
+        add(new THREE.Mesh(gCapA, stone), x, 7.55, z);
+        add(new THREE.Mesh(gCapB, stonePale), x, 7.76, z);
+        add(new THREE.Mesh(gCapC, stoneDeep), x, 7.94, z);
+        add(new THREE.Mesh(gCapBand, bronze), x, 8.04, z);
+        contactShadow(x, z, 1.65, 1.5, 0.48);
       }
 
-      // Entablature / canopy with layered trim + shadow gap
-      box(13.5, 0.42, 30, plaster, 0, 7.55, -5, 0.045, 1);
-      box(13.9, 0.06, 30.5, recessMat, 0, 7.28, -5);
-      box(13.7, 0.1, 30.3, bronzeSoft, 0, 7.34, -5, 0.02, 1);
-      box(12.7, 0.16, 29.1, limestoneSoft, 0, 7.78, -5, 0.03, 1);
-      // Shallow ceiling recess
-      box(9.5, 0.12, 22, recessMat, 0, 7.92, -6);
+      // Floor — heavy polished stone (desktop court language, no large pool)
+      deck(90, 120, darkFloor, 0, -12);
+      slab(70, 0.18, 100, stoneDeep, 0, -0.08, -12);
+      // Subtle aisle joints
+      slab(0.04, 0.02, 48, bronzeSoft, -2.0, 0.03, -8);
+      slab(0.04, 0.02, 48, bronzeSoft, 2.0, 0.03, -8);
 
-      // Side walls with layered reveals (depth darkening at corners)
-      box(0.5, 9.5, 42, plaster, -7.4, 4.6, -8, 0.04, 1);
-      box(0.5, 9.5, 42, plaster, 7.4, 4.6, -8, 0.04, 1);
-      box(0.12, 9.2, 40, recessMat, -7.08, 4.5, -8);
-      box(0.12, 9.2, 40, recessMat, 7.08, 4.5, -8);
+      // Colonnade — desktop rhythm, portrait-tight spacing so shafts stay in FOV
+      // (desktop ±6.6 reads off-frame on ~9:19 phones; keep the same language closer in)
+      var i, cz, colStep = 3.9, colX = 2.95;
+      for (i = 0; i < colPairs; i++) {
+        cz = 11 - i * colStep;
+        column(-colX, cz);
+        column(colX, cz);
+      }
 
-      // Architectural lighting — cooler ambient, warmer portal, soft pools
-      var hemi = new THREE.HemisphereLight(0xD5DCE4, 0x16120E, 0.24);
-      scene.add(hemi);
-      var key = new THREE.DirectionalLight(0xF0D6B0, 0.88);
-      key.position.set(-6.5, 17 + FRAME_Y, 12);
-      scene.add(key);
-      var fill = new THREE.DirectionalLight(0xA8B4C2, 0.16);
-      fill.position.set(8, 7 + FRAME_Y, 8);
-      scene.add(fill);
-      var portalLit = new THREE.PointLight(0xD4B086, 16, 30, 2);
-      portalLit.position.set(0, 4.0 + FRAME_Y, -38);
-      scene.add(portalLit);
-      var aisle = new THREE.PointLight(0xC4A878, 7.5, 18, 2);
-      aisle.position.set(0, 5.2 + FRAME_Y, -4);
-      scene.add(aisle);
-      var aisleFar = new THREE.PointLight(0xB89870, 5.5, 16, 2);
-      aisleFar.position.set(0, 5.0 + FRAME_Y, -18);
-      scene.add(aisleFar);
+      // Entablature + simplified coffered soffit (desktop 10×5 → LOD grid)
+      var soffitLen = colPairs * colStep + 5;
+      var soffitZ = 11 - (colPairs - 1) * colStep * 0.5;
+      slab(1.15, 0.4, soffitLen, stone, -colX, 8.35, soffitZ);
+      slab(1.15, 0.4, soffitLen, stone, colX, 8.35, soffitZ);
+      slab(1.28, 0.14, soffitLen + 0.4, stoneDeep, -colX, 8.6, soffitZ);
+      slab(1.28, 0.14, soffitLen + 0.4, stoneDeep, colX, 8.6, soffitZ);
+      slab(colX * 2 + 1.4, 0.12, soffitLen - 0.5, stoneDeep, 0, 8.7, soffitZ);
+      var row, col, cx, cz2, cofferPitch = colX * 2 / Math.max(1, cofferCols);
+      for (row = 0; row < cofferRows; row++) {
+        for (col = 0; col < cofferCols; col++) {
+          cx = -((cofferCols - 1) * cofferPitch) * 0.5 + col * cofferPitch;
+          cz2 = 9.8 - row * 3.55;
+          boxBev(Math.min(1.55, cofferPitch * 0.82), 0.08, 1.9, stonePale, cx, 8.52, cz2, 0.03);
+          slab(Math.min(1.25, cofferPitch * 0.65), 0.05, 1.55, groove, cx, 8.47, cz2);
+        }
+      }
+      slab(colX * 2 + 1.5, 0.04, 0.08, bronze, 0, 8.45, 12.2);
+      slab(colX * 2 + 1.5, 0.04, 0.08, bronze, 0, 8.45, -27.5);
 
-      // Camera sits slightly above the look target so the corridor rises into the
-      // upper half; vertical travel is intentionally small so empty black does not
-      // return mid-dolly. Vanishing point stays on the midline for the headline.
-      //
-      // Critical: do NOT dolly to camZ=-36 (old 12-e*48). That lands inside the
-      // facade beside portalLit and produces a one-frame color blowout on mobile GPUs.
-      var CAM_Z0 = 12, CAM_Z1 = -26, DOLLY_END = 0.82;
-      var camZ = CAM_Z0, camY = 3.55 + FRAME_Y * 0.18;
-      var lookY = 2.55;
+      // Facade massing — thick walls, string courses, cornice (desktop-derived, portrait width)
+      var faceZ = -29.5;
+      var faceHalf = 7.2;
+      slab(faceHalf + 0.2, 11.2, 1.45, stonePale, -(faceHalf * 0.55 + 2.4), 5.7, faceZ);
+      slab(faceHalf + 0.2, 11.2, 1.45, stonePale, (faceHalf * 0.55 + 2.4), 5.7, faceZ);
+      slab(5.4, 4.2, 1.45, stonePale, 0, 9.1, faceZ);
+      slab(22, 0.18, 1.65, stoneDeep, 0, 5.4, faceZ + 0.35);
+      slab(22, 0.14, 1.65, stoneDeep, 0, 9.5, faceZ + 0.35);
+      boxBev(22.5, 0.34, 2.0, stone, 0, 11.35, faceZ + 0.4, 0.05);
+      slab(23, 0.16, 2.4, stoneDeep, 0, 11.58, faceZ + 0.55);
+      // Portal pilasters
+      slab(0.52, 10.6, 0.48, stone, -2.55, 5.5, faceZ + 0.42);
+      slab(0.52, 10.6, 0.48, stone, 2.55, 5.5, faceZ + 0.42);
+      slab(0.58, 0.26, 0.5, bronze, -2.55, 10.85, faceZ + 0.48);
+      slab(0.58, 0.26, 0.5, bronze, 2.55, 10.85, faceZ + 0.48);
+
+      // Window bays — tucked behind colonnade (readable in peripheral FOV)
+      function windowBay(x, y) {
+        slab(1.7, 2.9, 0.5, groove, x, y, faceZ - 0.3);
+        slab(1.45, 2.55, 0.1, glass, x, y, faceZ + 0.12);
+        slab(0.06, 2.55, 0.1, bronze, x - 0.35, y, faceZ + 0.18);
+        slab(0.06, 2.55, 0.1, bronze, x + 0.35, y, faceZ + 0.18);
+        slab(1.45, 0.06, 0.1, bronze, x, y + 0.55, faceZ + 0.18);
+        slab(1.8, 0.12, 0.42, bronzeSoft, x, y + 1.55, faceZ - 0.02);
+      }
+      if (tierA) {
+        [-5.4, 5.4].forEach(function (x) {
+          windowBay(x, 3.1);
+          windowBay(x, 7.2);
+        });
+      } else {
+        [-5.2, 5.2].forEach(function (x) { windowBay(x, 3.1); });
+      }
+
+      // Portal — deep bronze throat + layered lintel (desktop construction, LOD depth)
+      slab(0.3, 6.8, 1.7, bronze, -2.15, 3.5, faceZ - 0.3);
+      slab(0.3, 6.8, 1.7, bronze, 2.15, 3.5, faceZ - 0.3);
+      boxBev(4.7, 0.42, 1.8, stone, 0, 7.05, faceZ - 0.25, 0.04);
+      slab(4.4, 0.1, 1.6, bronzeSoft, 0, 6.78, faceZ - 0.2);
+      slab(4.2, 0.05, 1.35, cove, 0, 6.68, faceZ - 0.4);
+      slab(4.4, 0.1, 1.45, stoneDeep, 0, 0.4, faceZ - 0.4);
+      slab(0.08, 6.5, 0.08, bronzeSoft, -2.0, 3.45, faceZ + 0.3);
+      slab(0.08, 6.5, 0.08, bronzeSoft, 2.0, 3.45, faceZ + 0.3);
+      // Lit aperture + recess (keeps portal as secondary focus; muted vs window glass)
+      slab(3.9, 6.1, 0.75, recessMat, 0, 3.35, faceZ - 1.45);
+      slab(3.3, 5.4, 0.16, plasterBright, 0, 3.35, faceZ - 2.2);
+      slab(2.7, 0.07, 0.1, cove, 0, 5.85, faceZ - 2.05);
+
+      // Interior — short plaster corridor + end wall (desktop-derived, truncated)
+      slab(0.38, 6.8, 14, plaster, -2.35, 3.5, -38.5);
+      slab(0.38, 6.8, 14, plaster, 2.35, 3.5, -38.5);
+      slab(0.14, 0.2, 14, stoneDeep, -2.22, 0.16, -38.5);
+      slab(0.14, 0.2, 14, stoneDeep, 2.22, 0.16, -38.5);
+      slab(0.12, 0.16, 14, stonePale, -2.22, 6.7, -38.5);
+      slab(0.12, 0.16, 14, stonePale, 2.22, 6.7, -38.5);
+      if (tierA) {
+        for (i = 0; i < 3; i++) {
+          cz = -33.2 - i * 3.3;
+          slab(0.05, 4.2, 2.3, stoneDeep, -2.18, 3.35, cz);
+          slab(0.05, 4.2, 2.3, stoneDeep, 2.18, 3.35, cz);
+          slab(0.035, 3.8, 1.95, plasterBright, -2.14, 3.35, cz);
+          slab(0.035, 3.8, 1.95, plasterBright, 2.14, 3.35, cz);
+        }
+      }
+      deck(5.0, 14, darkFloor, 0.04, -38.5);
+      slab(5.3, 0.3, 14, stonePale, 0, 6.9, -38.5);
+      // End wall — ivory field the page inherits
+      slab(6.4, 7.2, 0.4, plasterBright, 0, 3.8, -46.5);
+      slab(4.4, 0.12, 0.1, bronzeSoft, 0, 0.48, -46.25);
+      slab(4.4, 0.1, 0.1, bronzeSoft, 0, 6.85, -46.25);
+      slab(3.5, 3.8, 0.08, plaster, 0, 3.8, -46.25);
+
+      // Side aisle walls for depth (just outside column line)
+      slab(0.4, 8.2, 34, plaster, -(colX + 1.35), 4.0, -6);
+      slab(0.4, 8.2, 34, plaster, (colX + 1.35), 4.0, -6);
+      slab(0.1, 7.8, 32, recessMat, -(colX + 1.1), 3.9, -6);
+      slab(0.1, 7.8, 32, recessMat, (colX + 1.1), 3.9, -6);
+
+      // Lighting — desktop atmosphere at mobile light count
+      scene.add(new THREE.HemisphereLight(new THREE.Color(0x6A7A98), new THREE.Color(0x3A2E22), tierA ? 0.95 : 0.78));
+      var moon = new THREE.DirectionalLight(new THREE.Color(0xD0DCF0), tierA ? 1.15 : 0.95);
+      moon.position.set(-18, 24, 14); scene.add(moon);
+      var warm = new THREE.DirectionalLight(new THREE.Color(0xF2D6A8), tierA ? 0.72 : 0.58);
+      warm.position.set(12, 10, 8); scene.add(warm);
+      var front = new THREE.DirectionalLight(new THREE.Color(0xF0E4D0), 0.32);
+      front.position.set(0, 7, 26); scene.add(front);
+      var spill = new THREE.PointLight(new THREE.Color(0xFFD399), tierA ? 95 : 70, 42, 1.7);
+      spill.position.set(0, 3.4 + FRAME_Y, faceZ - 0.8); scene.add(spill);
+      var fill = new THREE.PointLight(new THREE.Color(0xFFE4B8), tierA ? 70 : 48, 36, 1.75);
+      fill.position.set(0, 4.8 + FRAME_Y, -42); scene.add(fill);
+      if (tierA) {
+        var upL = new THREE.PointLight(new THREE.Color(0xF0D2A0), 22, 12, 2);
+        upL.position.set(-colX, 1.2 + FRAME_Y, 10); scene.add(upL);
+        var upR = upL.clone(); upR.position.set(colX, 1.2 + FRAME_Y, 10); scene.add(upR);
+      }
+
+      // Safe dolly — preserve freeze / handoff behaviour from prior mobile fix
+      var CAM_Z0 = 13, CAM_Z1 = -24, DOLLY_END = 0.82;
+      var camZ = CAM_Z0, camY = 3.4 + FRAME_Y * 0.16;
+      var lookY = 3.0;
       var frozen = false;
       var lastW = 0, lastH = 0;
 
       function frame(v) {
         v = Math.max(0, Math.min(1, Number(v) || 0));
-        // While frozen, hold the safe end pose; still accept updates when scrubbing back
         if (frozen && v >= 0.84) return;
         var t = Math.min(v, DOLLY_END) / DOLLY_END;
         var e = ease(t);
         camZ = CAM_Z0 + (CAM_Z1 - CAM_Z0) * e;
-        camY = (3.55 + FRAME_Y * 0.18) - e * 0.18;
-        camera.fov = 50 - e * 5;
+        camY = (3.4 + FRAME_Y * 0.16) - e * 0.22;
+        camera.fov = 49 - e * 6;
         camera.updateProjectionMatrix();
-        // Keep fog dark through the handoff — no bright ivory flash in the GL buffer
-        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.55, DOLLY_END)) * 0.28);
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.5, DOLLY_END)) * 0.35);
         scene.background.copy(scene.fog.color);
-        scene.fog.near = 22 - e * 5;
-        scene.fog.far = 88 - e * 36;
-        renderer.toneMappingExposure = 0.98 + ease(cut(v, 0.5, DOLLY_END)) * 0.08;
+        scene.fog.near = 28 - e * 6;
+        scene.fog.far = 110 - e * 42;
+        renderer.toneMappingExposure = 1.08 + ease(cut(v, 0.45, DOLLY_END)) * 0.12;
       }
 
       function render(t) {
         if (frozen) {
-          // Hold the last valid frame; do not advance into the facade/light.
           renderer.render(scene, camera);
           return;
         }
-        var x = Math.sin(t * 0.03) * 0.03;
+        var x = Math.sin(t * 0.04) * 0.04;
         if (!isFinite(camZ) || !isFinite(camY) || !isFinite(x)) return;
         camera.position.set(x, camY, camZ);
-        camera.lookAt(0, lookY, -70);
+        camera.lookAt(0, lookY, -78);
         renderer.render(scene, camera);
       }
 
@@ -2943,25 +2983,18 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         if (!isFinite(w) || !isFinite(h) || w < 2 || h < 2) return;
         if (w === lastW && h === lastH) return;
         lastW = w; lastH = h;
-        // Capable mobile GL path only (constrained devices never reach here)
-        var mem = navigator.deviceMemory;
-        var scale = (typeof mem === 'number' && mem >= 6) ? 0.95 : 0.9;
-        var rw = Math.max(1, Math.floor(w * scale));
-        var rh = Math.max(1, Math.floor(h * scale));
+        var rw = Math.max(1, Math.floor(w * renderScale));
+        var rh = Math.max(1, Math.floor(h * renderScale));
         renderer.setSize(rw, rh, false);
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
         camera.aspect = w / h;
-        // Shift projection so architecture sits higher (~18% of viewport) while the
-        // vanishing point remains on the center axis under the headline.
-        var bias = Math.round(h * 0.18);
+        var bias = Math.round(h * 0.16);
         camera.setViewOffset(w, h, 0, bias, w, h);
         camera.updateProjectionMatrix();
       }
 
-      function freezeAt(on) {
-        frozen = !!on;
-      }
+      function freezeAt(on) { frozen = !!on; }
 
       function countTris() {
         var n = 0;
@@ -2974,10 +3007,33 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         return Math.round(n);
       }
 
-      // Tear down if the mobile view is ever destroyed/rebuilt (maps+mats created once at build)
+      function countDrawCalls() {
+        renderer.render(scene, camera);
+        return renderer.info.render.calls;
+      }
+
+      function texBytes() {
+        var seen = Object.create(null), bytes = 0;
+        scene.traverse(function (o) {
+          if (!o.material) return;
+          var mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(function (mat) {
+            ['map', 'bumpMap', 'roughnessMap', 'normalMap'].forEach(function (k) {
+              var tex = mat[k];
+              if (!tex || !tex.image || seen[tex.uuid]) return;
+              seen[tex.uuid] = 1;
+              var img = tex.image;
+              bytes += (img.width || 0) * (img.height || 0) * 4;
+            });
+          });
+        });
+        return bytes;
+      }
+
       function dispose() {
         var killedTex = Object.create(null);
         var killedMat = Object.create(null);
+        var killedGeo = Object.create(null);
         function killTex(tex) {
           if (!tex || !tex.uuid || killedTex[tex.uuid]) return;
           killedTex[tex.uuid] = 1;
@@ -2995,7 +3051,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           mat.dispose();
         }
         scene.traverse(function (obj) {
-          if (obj.geometry) obj.geometry.dispose();
+          if (obj.geometry && obj.geometry.uuid && !killedGeo[obj.geometry.uuid]) {
+            killedGeo[obj.geometry.uuid] = 1;
+            obj.geometry.dispose();
+          }
           if (!obj.material) return;
           if (Array.isArray(obj.material)) obj.material.forEach(killMat);
           else killMat(obj.material);
@@ -3007,7 +3066,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       frame(0);
       return {
         frame: frame, render: render, size: size, freezeAt: freezeAt, dispose: dispose,
-        tris: countTris()
+        tris: countTris(), draws: countDrawCalls(), texBytes: texBytes(), tier: tierA ? 'A' : 'B'
       };
     }
 
@@ -3164,6 +3223,18 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       view.size();
       paint(p);
       view.render(0, drift);
+      if (progressive && built) {
+        // Mobile LOD metrics for QA (desktop path unchanged)
+        try {
+          window.__veyraMobileStats = {
+            tris: built.tris,
+            draws: built.draws,
+            texKB: Math.round((typeof built.texBytes === 'function' ? built.texBytes() : (built.texBytes || 0)) / 1024),
+            tier: built.tier || 'B',
+            canvas: { w: canvas.width, h: canvas.height }
+          };
+        } catch (err) {}
+      }
       if (progressive) {
         // mobile: first frame under the static plate, then soft crossfade
         requestAnimationFrame(function () {
