@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Mobile rail LCP only — desktop keeps the first detail thumb lazy/hidden -->
+<link rel="preload" as="image" href="assets/detail-casa-ardent.webp" media="(width < 760px)" fetchpriority="high">
 <script>
 document.documentElement.classList.add('js');
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -332,7 +334,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .hero__copy-m{display:none;}
 .hero__copy-d{display:inline;}
 /* Mobile: show the static plate immediately (no wait for JS / Three) */
-@media(max-width:759px){
+@media(width < 760px){
   .hero__interior{opacity:1;transform:scale(1.06);object-position:50% 22%;}
   /*
     Mobile pin coverage: 100svh underfills when the browser chrome collapses,
@@ -524,7 +526,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   padding-top:1.4rem;border-top:1px solid rgba(241,235,225,.18);
 }
 /* Mobile foot overrides must follow the base .hero__foot / .scroll-cue rules (cascade) */
-@media(max-width:759px){
+@media(width < 760px){
   .hero__meta{display:none!important;}
   .hero__foot{
     margin-top:var(--hero-cta-to-cue,22px);
@@ -590,13 +592,65 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   font-size:.74rem;letter-spacing:.14em;color:var(--fg-muted);white-space:nowrap;
 }
 .index__thumb{display:none;}
-@media(max-width:719px){
-  .index__row{grid-template-columns:auto 1fr;}
-  .index__price{grid-column:2;grid-row:auto;justify-self:start;text-align:left;padding-top:.5rem;}
-  .index__thumb{
-    display:block;grid-column:1 / -1;margin-top:1.2rem;aspect-ratio:16/10;overflow:hidden;
+.index__desc,.index__cta,.index__counter{display:none;}
+/* Mobile Selected Residences — native snap card rail (desktop list unchanged ≥760) */
+@media(width < 760px){
+  .index__counter{
+    display:block;margin:0 0 1rem;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--fg-faint);font-variant-numeric:tabular-nums;
   }
-  .index__thumb img{width:100%;height:100%;object-fit:cover;}
+  .index__list{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(84vw,1fr);
+    gap:.75rem;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    border-top:0;
+    margin-top:clamp(2rem,5vw,3rem);
+    margin-inline:calc(var(--gutter) * -1);
+    padding-inline:var(--gutter);
+    padding-bottom:.25rem;
+    touch-action:pan-x pan-y;
+  }
+  .index__list::-webkit-scrollbar{display:none;}
+  .index__row{
+    scroll-snap-align:start;
+    display:flex;flex-direction:column;align-items:flex-start;gap:.7rem;
+    grid-template-columns:unset;
+    padding:0 0 .35rem;border-bottom:0;
+    transition:none;
+  }
+  .index__row:hover,.index__row:focus-within{padding-left:0;}
+  .index__row::before{display:none;}
+  .index__row:hover .index__name{transform:none;}
+  .index__link{z-index:1;}
+  .index__num{display:none;}
+  .index__name{
+    grid-column:unset;font-size:clamp(1.55rem,7vw,2rem);line-height:1.1;position:relative;z-index:2;
+  }
+  .index__place,.index__price{
+    grid-column:unset;justify-self:start;text-align:left;padding-top:0;position:relative;z-index:2;
+  }
+  .index__price{font-size:.72rem;letter-spacing:.14em;color:var(--fg);}
+  .index__thumb{
+    display:block;order:-1;width:100%;margin:0;aspect-ratio:4/5;overflow:hidden;position:relative;z-index:0;
+  }
+  .index__thumb img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;}
+  .index__desc{
+    display:block;margin:0;max-width:34ch;font-size:.95rem;line-height:1.55;color:var(--fg-muted);
+    position:relative;z-index:2;
+  }
+  .index__cta{
+    display:inline-flex;align-items:center;gap:.85em;margin-top:.15rem;min-height:48px;
+    position:relative;z-index:4;padding-block:.35rem;
+  }
+  /* Overlay link is desktop-only; keep out of touch + keyboard path on mobile */
+  .index__link{pointer-events:none;visibility:hidden;}
 }
 .hover-preview{
   position:fixed;top:0;left:0;z-index:4;width:min(20vw,278px);aspect-ratio:11/14;
@@ -677,16 +731,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 /* ============================================================
    SHOWCASE
    ============================================================ */
-.showcase{overflow:hidden;}
-.showcase__top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:2rem;}
-.showcase__grid{
-  margin-top:clamp(2.6rem,5vw,4.5rem);display:grid;gap:clamp(2rem,3.4vw,3rem);
-}
-@media(min-width:980px){
-  .showcase__grid{grid-template-columns:minmax(13rem,20rem) minmax(0,1fr);gap:clamp(2.5rem,4.4vw,4.5rem);align-items:start;}
-}
-
-/* Horizontal sequence: break â†’ residences â€” scoped to #portfolioTrack only */
+/* Horizontal sequence: break → residences — scoped to #portfolioTrack only */
 .ph-track{position:relative;}
 .ph-pin{position:relative;width:100%;}
 .ph__rail{display:flex;flex-direction:column;}
@@ -730,6 +775,64 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .ph__info .specs{background:rgba(241,235,225,.14);}
 .ph__info .specs div{background:var(--espresso);}
 .ph__info .specs dt{color:rgba(241,235,225,.45);}
+/* Desktop: summary toggle + mobile CTA hidden; detail always open */
+.ph__toggle{display:none;}
+.ph__cta-m{display:none;}
+.ph__detail{display:grid;gap:1.1rem;}
+/* Mobile portfolio — compact expandable specs (pin/rail unchanged ≥900) */
+@media(width < 760px){
+  #dragCue{display:none!important;}
+  .ph__chrome{display:none!important;}
+  .break{
+    min-height:0!important;height:auto;
+    padding-block:clamp(3.5rem,14svh,5.5rem);
+  }
+  .break__quote{font-size:clamp(1.55rem,6.5vw,2.2rem);}
+  .break__media{position:absolute;inset:0;}
+  .break__media img{min-height:100%;}
+  .ph__prop{
+    gap:0;padding-block:0;padding-inline:0;
+    border-bottom:1px solid rgba(241,235,225,.14);
+  }
+  .ph__prop:first-of-type{border-top:1px solid rgba(241,235,225,.14);}
+  .ph__media{display:none!important;}
+  .ph__num{display:none;}
+  .ph__info{gap:0;padding-inline:var(--gutter);}
+  .ph__toggle{
+    display:grid;
+    grid-template-columns:auto 1fr auto auto;
+    align-items:center;gap:.85rem 1rem;
+    width:100%;min-height:56px;padding:1.15rem 0;text-align:left;color:#F1EBE1;
+    scroll-margin-top:calc(var(--nav-h, 4.5rem) + 12px);
+  }
+  .ph__toggle:focus-visible{outline:1px solid rgba(241,235,225,.45);outline-offset:2px;}
+  .ph__toggle-n{font-size:.62rem;letter-spacing:.18em;color:rgba(241,235,225,.45);font-variant-numeric:tabular-nums;}
+  .ph__toggle-main{display:grid;gap:.25rem;min-width:0;}
+  .ph__toggle-name{font-family:var(--serif);font-size:clamp(1.2rem,5.2vw,1.45rem);line-height:1.15;}
+  .ph__toggle-place{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(241,235,225,.48);}
+  .ph__toggle-price{font-size:.66rem;letter-spacing:.12em;color:rgba(241,235,225,.72);white-space:nowrap;}
+  .ph__toggle-sign{
+    position:relative;width:12px;height:12px;flex:none;
+  }
+  .ph__toggle-sign::before,.ph__toggle-sign::after{
+    content:"";position:absolute;left:0;top:50%;width:100%;height:1px;background:currentColor;
+  }
+  .ph__toggle-sign::after{transform:rotate(90deg);transition:transform .45s var(--ease);}
+  .ph__prop.is-open .ph__toggle-sign::after{transform:rotate(0deg);}
+  .ph__detail{
+    display:none;gap:1rem;padding:0 0 1.35rem;
+  }
+  .ph__prop.is-open .ph__detail{display:grid;}
+  .ph__detail[hidden]{display:none!important;}
+  .ph__detail .pdetail__title{font-size:clamp(1.45rem,5vw,1.75rem);}
+  .ph__cta-d{display:none!important;}
+  .ph__cta-m{
+    display:inline-flex;align-items:center;gap:.85em;margin-top:.35rem;min-height:48px;
+    color:rgba(241,235,225,.85);
+  }
+  .ph__cta-m:focus-visible{outline:1px solid rgba(241,235,225,.45);outline-offset:3px;}
+  .ph__info .specs{margin-top:.2rem;}
+}
 .ph__chrome{
   margin-top:clamp(1.5rem,3vw,2.2rem);
   padding:0 var(--gutter) var(--section-y);
@@ -818,47 +921,6 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .pindex__btn{position:relative;}
 .pindex__n{font-size:.62rem;letter-spacing:.16em;font-variant-numeric:tabular-nums;padding-left:1rem;margin-left:auto;}
 .pindex__note{margin-top:1.6rem;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-faint);}
-
-.stage{position:relative;}
-.stage__frame{
-  position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--espresso-soft);
-  cursor:grab;touch-action:pan-y;
-}
-@media(min-width:760px){.stage__frame{aspect-ratio:16/10;}}
-.stage__frame.is-dragging{cursor:grabbing;}
-.stage__layer{position:absolute;inset:0;opacity:0;}
-.stage__layer.is-current{opacity:1;}
-.stage__layer img{width:100%;height:100%;object-fit:cover;will-change:transform;}
-.stage__count{
-  position:absolute;left:0;bottom:0;z-index:4;padding:clamp(1rem,2vw,1.8rem);
-  font-family:var(--serif);font-size:clamp(2.6rem,6vw,5rem);line-height:.85;color:rgba(241,235,225,.92);
-  mix-blend-mode:normal;pointer-events:none;display:flex;align-items:baseline;gap:.3rem;
-}
-.stage__count sub{font-family:var(--sans);font-size:.7rem;letter-spacing:.18em;vertical-align:baseline;color:rgba(241,235,225,.55);bottom:0;}
-.stage__numwrap{display:inline-block;overflow:hidden;line-height:.85;padding-bottom:.04em;}
-#stageNum{display:inline-block;}
-.stage__frame::after{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
-  background:linear-gradient(to top,rgba(10,8,6,.55),rgba(10,8,6,0) 45%);
-}
-.stage__ctrl{
-  position:absolute;right:0;bottom:0;z-index:5;display:flex;
-}
-.stage__ctrl button{
-  width:clamp(3rem,4.4vw,3.9rem);height:clamp(3rem,4.4vw,3.9rem);
-  display:grid;place-items:center;background:rgba(23,19,15,.55);color:#F1EBE1;
-  transition:background-color .5s var(--ease);
-}
-.stage__ctrl button + button{border-left:1px solid rgba(241,235,225,.2);}
-.stage__ctrl button:hover{background:var(--espresso);}
-.stage__ctrl i{display:block;width:16px;height:1px;background:currentColor;position:relative;transition:transform .5s var(--ease);}
-.stage__ctrl i::after{
-  content:"";position:absolute;top:50%;width:6px;height:6px;border-top:1px solid currentColor;border-right:1px solid currentColor;
-}
-.stage__ctrl .prev i::after{left:0;transform:translateY(-50%) rotate(-135deg);}
-.stage__ctrl .next i::after{right:0;transform:translateY(-50%) rotate(45deg);}
-.stage__ctrl .prev:hover i{transform:translateX(-3px);}
-.stage__ctrl .next:hover i{transform:translateX(3px);}
 
 .stage__bar{display:flex;gap:.5rem;margin-top:1.1rem;}
 .stage__bar i{flex:1;height:1px;background:var(--hair);position:relative;overflow:hidden;}
@@ -976,7 +1038,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   filter:grayscale(1) sepia(.18) contrast(1.03) brightness(1.02);
   transition:transform 1.3s var(--ease),filter 1.1s var(--ease);
 }
-.member:hover .member__fig img{transform:scale(1.035);filter:grayscale(.55) sepia(.08);}
+@media(hover:hover) and (pointer:fine){
+  .member:hover .member__fig img{transform:scale(1.035);filter:grayscale(.55) sepia(.08);}
+}
 @media(min-width:820px){.team .member:nth-child(2){margin-top:clamp(1.6rem,4vw,3.5rem);}}
 .member__name{font-family:var(--serif);font-size:clamp(1.4rem,2.1vw,1.85rem);line-height:1.1;margin-top:1.3rem;}
 .member__role{margin-top:.6rem;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg-muted);}
@@ -988,8 +1052,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
    ============================================================ */
 .contact__grid{display:grid;gap:clamp(3rem,5vw,4.5rem);}
 @media(min-width:960px){
-  .contact__grid{grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:clamp(3rem,7vw,7.5rem);align-items:start;}
+  .contact__grid{
+    grid-template-columns:minmax(0,.85fr) minmax(0,1fr);
+    grid-template-areas:"copy form" "offices form";
+    gap:clamp(3rem,7vw,7.5rem);align-items:start;
+  }
+  .contact__copy{grid-area:copy;}
+  .contact__grid > .form{grid-area:form;}
+  .contact__grid > .offices{grid-area:offices;margin-top:0;}
 }
+.contact__copy .lede{margin-top:clamp(1.6rem,3vw,2.2rem);}
 .offices{margin-top:clamp(2.4rem,4vw,3.4rem);border-top:1px solid var(--hair);}
 .offices li{display:flex;justify-content:space-between;gap:1.5rem;padding-block:1.1rem;border-bottom:1px solid var(--hair);}
 .offices dt,.offices .o-city{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;}
@@ -1020,6 +1092,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 }
 .form.is-sent .form__done{display:block;}
 .form.is-sent .form__fields,.form.is-sent .form__foot{display:none;}
+.quotes__counter{display:none;}
 
 /* ============================================================
    FOOTER
@@ -1046,6 +1119,173 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 .foot__bar p,.foot__bar a{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);}
 .foot__bar a{display:inline-block;padding-block:.8rem;}
 .foot__bar a:hover{color:var(--fg);}
+
+/* ============================================================
+   PHASE 2 — mobile visual system (below 760px)
+   Desktop ≥760 unchanged. Hero + Phase 1 residences/portfolio preserved.
+   ============================================================ */
+@media(width < 760px){
+  :root{
+    --mobile-page-x:20px;
+    --mobile-section-y:84px;
+    --mobile-section-y-large:104px;
+    --mobile-element-gap:22px;
+    --mobile-copy-gap:16px;
+    --gutter:var(--mobile-page-x);
+    --section-y:var(--mobile-section-y);
+  }
+
+  body{font-size:1rem;line-height:1.65;}
+  .h-lg{font-size:clamp(2.15rem,9.2vw,2.85rem);line-height:1.05;}
+  .h-md{font-size:clamp(1.7rem,7vw,2.15rem);line-height:1.12;}
+  .lede{font-size:1.02rem;line-height:1.6;max-width:36ch;}
+  .head{gap:var(--mobile-copy-gap);}
+  .head__meta{margin-bottom:var(--mobile-copy-gap);}
+  #services.section-pad,
+  #places.section-pad,
+  #why.section-pad,
+  #clients.section-pad,
+  #advisors.section-pad,
+  #contact.section-pad{padding-block:var(--mobile-section-y);}
+  #why.section-pad,
+  #contact.section-pad{padding-block:var(--mobile-section-y-large);}
+
+  /* ---- Capabilities ---- */
+  .svc{margin-top:clamp(2.2rem,7vw,2.8rem);}
+  .svc__btn{
+    min-height:56px;align-items:center;gap:1rem;
+    padding-block:1.05rem;
+  }
+  .svc__name{font-size:clamp(1.28rem,5.6vw,1.55rem);line-height:1.2;}
+  .svc__sign{width:12px;height:12px;}
+  .svc__sign::before,.svc__sign::after{transition:transform .45s var(--ease);}
+  .svc__panel-in{padding:0 0 1.15rem;max-width:38ch;}
+  .svc__panel p{font-size:.95rem;line-height:1.55;}
+  .svc__btn:hover .svc__name{color:inherit;}
+  .svc__btn:focus-visible .svc__name{color:var(--accent);}
+
+  /* ---- Markets ---- */
+  .places{
+    gap:clamp(2.4rem,8vw,3rem);
+    margin-top:clamp(2.2rem,7vw,2.8rem);
+  }
+  .place{display:grid;gap:0;}
+  .place__fig{
+    aspect-ratio:5/4;
+    margin-inline:calc(var(--gutter) * -1);
+    width:calc(100% + (var(--gutter) * 2));
+  }
+  .place__fig img{will-change:auto;transform:none;}
+  .place:nth-child(1) .place__fig img{object-position:50% 42%;}
+  .place:nth-child(2) .place__fig img{object-position:48% 32%;}
+  .place:nth-child(3) .place__fig img{object-position:52% 48%;}
+  .place__head{
+    margin-top:1rem;padding-bottom:.75rem;gap:.75rem;
+  }
+  .place__name{font-size:clamp(1.45rem,6vw,1.75rem);}
+  .place__coord{font-size:.62rem;letter-spacing:.12em;}
+  .place p{margin-top:.85rem;font-size:.95rem;line-height:1.55;max-width:34ch;}
+
+  /* ---- Why Veyra ---- */
+  .why__grid{gap:var(--mobile-element-gap);}
+  .why__figure{display:none;}
+  .why__list{margin-top:.35rem;}
+  .why__item{
+    grid-template-columns:auto 1fr;
+    gap:.35rem 1rem;
+    padding-block:1.05rem;
+  }
+  .why__n{padding-top:.2rem;}
+  .why__t{font-size:clamp(1.25rem,5.4vw,1.5rem);line-height:1.18;}
+  .why__d{
+    grid-column:2;margin-top:.35rem;font-size:.94rem;line-height:1.55;max-width:34ch;
+  }
+
+  /* ---- Testimonials ---- */
+  .quotes{touch-action:pan-y;}
+  .quotes__stage{
+    touch-action:pan-y;
+    min-height:14.5rem;
+  }
+  .quote blockquote{
+    font-size:clamp(1.35rem,6.2vw,1.7rem);line-height:1.28;max-width:22ch;
+  }
+  .quote figcaption{margin-top:1.25rem;}
+  .quotes__nav{
+    gap:1rem;margin-top:1.75rem;padding-top:1.15rem;
+    flex-wrap:wrap;
+  }
+  .quotes__counter{
+    display:block;order:-1;width:100%;margin:0 0 .15rem;
+    font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--fg-faint);font-variant-numeric:tabular-nums;
+  }
+  .quotes__dots button{
+    min-width:44px;min-height:44px;padding:.7rem .55rem;
+  }
+  .quotes__arrows{gap:.25rem;}
+  .quotes__arrows button{
+    min-height:48px;min-width:64px;padding:.85rem .7rem;
+  }
+  .quotes__arrows button:hover{color:var(--fg-muted);}
+  .quotes__arrows button:focus-visible{color:var(--fg);}
+
+  /* ---- Advisors ---- */
+  .team{gap:clamp(2.4rem,8vw,3rem);margin-top:clamp(2.2rem,7vw,2.8rem);}
+  .member__fig{aspect-ratio:4/5;max-height:min(58vh,26rem);}
+  .member__fig img{
+    object-position:50% 18%;
+    filter:grayscale(.28) sepia(.1) contrast(1.02) brightness(1.03);
+  }
+  .member:nth-child(2) .member__fig img{object-position:50% 16%;}
+  .member:nth-child(3) .member__fig img{object-position:48% 20%;}
+  .member__name{margin-top:1rem;font-size:clamp(1.35rem,5.8vw,1.65rem);}
+  .member__role{margin-top:.45rem;font-size:.64rem;}
+  .member p{margin-top:.7rem;font-size:.94rem;line-height:1.55;max-width:34ch;}
+  .member__mail{
+    margin-top:.35rem;min-height:48px;align-items:center;
+  }
+
+  /* ---- Consultation form ---- */
+  .contact__grid{gap:var(--mobile-element-gap);}
+  .contact__copy .lede{margin-top:var(--mobile-copy-gap);}
+  .contact__grid > .offices{
+    order:3;margin-top:clamp(1.6rem,5vw,2.2rem);
+  }
+  .contact__grid > .form{order:2;}
+  .contact__copy{order:1;}
+  .form{gap:1.35rem;}
+  .form__fields{gap:1.2rem;}
+  .field{gap:.45rem;}
+  .field label{font-size:.66rem;letter-spacing:.18em;}
+  .field input,.field select{
+    min-height:52px;padding:.85rem 0;font-size:1.05rem;
+  }
+  .field textarea{
+    min-height:7.5rem;padding-top:.9rem;font-size:1.05rem;
+  }
+  .form__foot{
+    flex-direction:column;align-items:stretch;gap:1rem;margin-top:.35rem;
+  }
+  .form__foot .btn{
+    justify-content:center;min-height:52px;width:100%;
+  }
+  .form__note{max-width:none;}
+  .offices li{
+    flex-direction:column;align-items:flex-start;gap:.35rem;
+    padding-block:1rem;min-height:48px;
+  }
+  .offices .o-addr{text-align:left;}
+  .offices .o-addr a{padding-block:.55rem;}
+
+  /* Touch: kill sticky hover transforms on coarse pointers */
+  .place__fig img,
+  .member__fig img{transform:none!important;}
+  .pfig img,
+  .break__media img,
+  .why__figure img{will-change:auto;}
+  .quotes__stage:focus-visible{outline:1px solid var(--accent);outline-offset:4px;}
+}
 
 /* ============================================================
    TABLET DENSITY
@@ -1167,42 +1407,51 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     <p class="lede" data-rv="up">Every engagement is limited by design. A small portfolio is what allows each property to hold the attention of a senior advisor.</p>
   </div>
 
-  <ol class="index__list" id="indexList">
+  <p class="index__counter" id="indexCounter" aria-live="polite" aria-atomic="true"><span class="index__counter-n">01</span> / 04</p>
+  <ol class="index__list" id="indexList" aria-label="Selected residences">
     <li class="index__row" data-preview="assets/detail-casa-ardent.webp" data-goto="0">
       <a class="index__link" href="#portfolio" aria-label="Casa Ardent, Miami Beach — view in portfolio"></a>
-      <span class="num index__num">01</span>
+      <span class="num index__num" aria-hidden="true">01</span>
       <span class="index__name display">Casa Ardent</span>
       <span class="index__place">Miami Beach, Florida</span>
       <span class="index__price">$28,500,000</span>
-      <span class="index__thumb"><img src="assets/detail-casa-ardent.webp" alt="Interior of Casa Ardent opening to a terrace" loading="lazy" width="1100" height="1400"></span>
+      <span class="index__thumb"><img src="assets/detail-casa-ardent.webp" alt="Interior of Casa Ardent opening to a terrace" loading="lazy" width="1100" height="1400" decoding="async"></span>
+      <p class="index__desc">One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.</p>
+      <a class="ln index__cta" href="#ph-toggle-0" data-goto="0">View residence <i class="arw" aria-hidden="true"></i></a>
     </li>
     <li class="index__row" data-preview="assets/detail-meridian.webp" data-goto="1">
       <a class="index__link" href="#portfolio" aria-label="The Meridian Penthouse, Manhattan — view in portfolio"></a>
-      <span class="num index__num">02</span>
+      <span class="num index__num" aria-hidden="true">02</span>
       <span class="index__name display">The Meridian Penthouse</span>
       <span class="index__place">Manhattan, New York</span>
       <span class="index__price">$34,000,000</span>
-      <span class="index__thumb"><img src="assets/detail-meridian.webp" alt="Stone and oak interior of the Meridian Penthouse" loading="lazy" width="1100" height="1400"></span>
+      <span class="index__thumb"><img src="assets/detail-meridian.webp" alt="Stone and oak interior of the Meridian Penthouse" loading="lazy" width="1100" height="1400" decoding="async"></span>
+      <p class="index__desc">A full-floor residence above Central Park, composed in natural stone, oak and uninterrupted glass.</p>
+      <a class="ln index__cta" href="#ph-toggle-1" data-goto="1">View residence <i class="arw" aria-hidden="true"></i></a>
     </li>
     <li class="index__row" data-preview="assets/detail-solenne.webp" data-goto="2">
       <a class="index__link" href="#portfolio" aria-label="Villa Solenne, Palm Beach — view in portfolio"></a>
-      <span class="num index__num">03</span>
+      <span class="num index__num" aria-hidden="true">03</span>
       <span class="index__name display">Villa Solenne</span>
       <span class="index__place">Palm Beach, Florida</span>
       <span class="index__price">Price on request</span>
-      <span class="index__thumb"><img src="assets/detail-solenne.webp" alt="Marble bathing pavilion at Villa Solenne" loading="lazy" width="1100" height="1400"></span>
+      <span class="index__thumb"><img src="assets/detail-solenne.webp" alt="Marble bathing pavilion at Villa Solenne" loading="lazy" width="1100" height="1400" decoding="async"></span>
+      <p class="index__desc">A Mediterranean estate restored with contemporary interiors, held inside mature tropical gardens.</p>
+      <a class="ln index__cta" href="#ph-toggle-2" data-goto="2">View residence <i class="arw" aria-hidden="true"></i></a>
     </li>
     <li class="index__row" data-preview="assets/detail-ocean-house.webp" data-goto="3">
       <a class="index__link" href="#portfolio" aria-label="Ocean House No. 18, Golden Beach — view in portfolio"></a>
-      <span class="num index__num">04</span>
+      <span class="num index__num" aria-hidden="true">04</span>
       <span class="index__name display">Ocean House No. 18</span>
       <span class="index__place">Golden Beach, Florida</span>
       <span class="index__price">$42,000,000</span>
-      <span class="index__thumb"><img src="assets/detail-ocean-house.webp" alt="Ocean House No. 18 at dusk beneath mature trees" loading="lazy" width="1100" height="1400"></span>
+      <span class="index__thumb"><img src="assets/detail-ocean-house.webp" alt="Ocean House No. 18 at dusk beneath mature trees" loading="lazy" width="1100" height="1400" decoding="async"></span>
+      <p class="index__desc">An oceanfront compound with private beach access, a wellness pavilion and a separate guest residence.</p>
+      <a class="ln index__cta" href="#ph-toggle-3" data-goto="3">View residence <i class="arw" aria-hidden="true"></i></a>
     </li>
   </ol>
 </section>
-<div class="hover-preview" id="hoverPreview" aria-hidden="true"><img src="assets/detail-casa-ardent.webp" alt=""></div>
+<div class="hover-preview" id="hoverPreview" aria-hidden="true"><img alt="" loading="lazy" width="1100" height="1400" decoding="async"></div>
 
 <!-- ============================ 3. ABOUT ============================ -->
 <section id="approach" class="section-pad shell" style="background:var(--ivory-warm)" aria-labelledby="about-h">
@@ -1284,97 +1533,145 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       <section id="portfolio" class="ph__slide ph__prop" data-prop="0" aria-labelledby="portfolio-h" aria-label="Casa Ardent">
         <h2 id="portfolio-h" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">The current portfolio</h2>
         <div class="ph__media">
-          <img src="assets/prop-casa-ardent.webp" alt="Casa Ardent, a waterfront residence with a full-length pool terrace" loading="lazy" width="2000" height="1300">
+          <img data-desktop-src="assets/prop-casa-ardent.webp" alt="Casa Ardent, a waterfront residence with a full-length pool terrace" loading="lazy" width="2000" height="1300">
           <span class="ph__num" aria-hidden="true">01<sub>/ 04</sub></span>
         </div>
         <div class="ph__info">
-          <div>
-            <h3 class="pdetail__title">Casa Ardent</h3>
-            <p class="pdetail__place">Miami Beach, Florida Â· Ref. VPE-1147</p>
-            <p class="pdetail__price">$28,500,000</p>
+          <button type="button" class="ph__toggle" aria-expanded="false" aria-controls="ph-detail-0" id="ph-toggle-0">
+            <span class="ph__toggle-n">01</span>
+            <span class="ph__toggle-main">
+              <span class="ph__toggle-name">Casa Ardent</span>
+              <span class="ph__toggle-place">Miami Beach · 7 bed · 9 bath · 10,800 sq ft</span>
+            </span>
+            <span class="ph__toggle-price">$28,500,000</span>
+            <span class="ph__toggle-sign" aria-hidden="true"></span>
+          </button>
+          <div class="ph__detail" id="ph-detail-0">
+            <div>
+              <h3 class="pdetail__title">Casa Ardent</h3>
+              <p class="pdetail__place">Miami Beach, Florida · Ref. VPE-1147</p>
+              <p class="pdetail__price">$28,500,000</p>
+            </div>
+            <div>
+              <p class="pdetail__desc">One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.</p>
+              <a class="ln ph__cta-d" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+              <a class="ln ph__cta-m" href="#contact">Request details <i class="arw" aria-hidden="true"></i></a>
+            </div>
+            <dl class="specs">
+              <div><dt>Bedrooms</dt><dd>7</dd></div>
+              <div><dt>Bathrooms</dt><dd>9</dd></div>
+              <div><dt>Interior</dt><dd>10,800 sq ft</dd></div>
+              <div><dt>Reference</dt><dd>VPE-1147</dd></div>
+            </dl>
           </div>
-          <div>
-            <p class="pdetail__desc">One hundred and twenty feet of private frontage, sculptural interiors, and a dock that reads as part of the architecture.</p>
-            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
-          </div>
-          <dl class="specs">
-            <div><dt>Bedrooms</dt><dd>7</dd></div>
-            <div><dt>Bathrooms</dt><dd>9</dd></div>
-            <div><dt>Interior</dt><dd>10,800 sq ft</dd></div>
-            <div><dt>Reference</dt><dd>VPE-1147</dd></div>
-          </dl>
         </div>
       </section>
 
       <article class="ph__slide ph__prop" data-prop="1" aria-label="The Meridian Penthouse">
         <div class="ph__media">
-          <img src="assets/prop-meridian.webp" alt="The Meridian Penthouse, an interior framed by full-height glass" loading="lazy" width="2000" height="1300">
+          <img data-desktop-src="assets/prop-meridian.webp" alt="The Meridian Penthouse, an interior framed by full-height glass" loading="lazy" width="2000" height="1300">
           <span class="ph__num" aria-hidden="true">02<sub>/ 04</sub></span>
         </div>
         <div class="ph__info">
-          <div>
-            <h3 class="pdetail__title">The Meridian Penthouse</h3>
-            <p class="pdetail__place">Manhattan, New York Â· Ref. VPE-2038</p>
-            <p class="pdetail__price">$34,000,000</p>
+          <button type="button" class="ph__toggle" aria-expanded="false" aria-controls="ph-detail-1" id="ph-toggle-1">
+            <span class="ph__toggle-n">02</span>
+            <span class="ph__toggle-main">
+              <span class="ph__toggle-name">The Meridian Penthouse</span>
+              <span class="ph__toggle-place">Manhattan · 5 bed · 6 bath · 7,200 sq ft</span>
+            </span>
+            <span class="ph__toggle-price">$34,000,000</span>
+            <span class="ph__toggle-sign" aria-hidden="true"></span>
+          </button>
+          <div class="ph__detail" id="ph-detail-1">
+            <div>
+              <h3 class="pdetail__title">The Meridian Penthouse</h3>
+              <p class="pdetail__place">Manhattan, New York · Ref. VPE-2038</p>
+              <p class="pdetail__price">$34,000,000</p>
+            </div>
+            <div>
+              <p class="pdetail__desc">A full-floor residence above Central Park, composed in natural stone, oak and uninterrupted glass.</p>
+              <a class="ln ph__cta-d" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+              <a class="ln ph__cta-m" href="#contact">Request details <i class="arw" aria-hidden="true"></i></a>
+            </div>
+            <dl class="specs">
+              <div><dt>Bedrooms</dt><dd>5</dd></div>
+              <div><dt>Bathrooms</dt><dd>6</dd></div>
+              <div><dt>Interior</dt><dd>7,200 sq ft</dd></div>
+              <div><dt>Reference</dt><dd>VPE-2038</dd></div>
+            </dl>
           </div>
-          <div>
-            <p class="pdetail__desc">A full-floor residence above Central Park, composed in natural stone, oak and uninterrupted glass.</p>
-            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
-          </div>
-          <dl class="specs">
-            <div><dt>Bedrooms</dt><dd>5</dd></div>
-            <div><dt>Bathrooms</dt><dd>6</dd></div>
-            <div><dt>Interior</dt><dd>7,200 sq ft</dd></div>
-            <div><dt>Reference</dt><dd>VPE-2038</dd></div>
-          </dl>
         </div>
       </article>
 
       <article class="ph__slide ph__prop" data-prop="2" aria-label="Villa Solenne">
         <div class="ph__media">
-          <img src="assets/prop-solenne.webp" alt="Villa Solenne, a white Mediterranean estate behind mature planting" loading="lazy" width="2000" height="1300">
+          <img data-desktop-src="assets/prop-solenne.webp" alt="Villa Solenne, a white Mediterranean estate behind mature planting" loading="lazy" width="2000" height="1300">
           <span class="ph__num" aria-hidden="true">03<sub>/ 04</sub></span>
         </div>
         <div class="ph__info">
-          <div>
-            <h3 class="pdetail__title">Villa Solenne</h3>
-            <p class="pdetail__place">Palm Beach, Florida Â· Ref. VPE-1592</p>
-            <p class="pdetail__price">Price on request</p>
+          <button type="button" class="ph__toggle" aria-expanded="false" aria-controls="ph-detail-2" id="ph-toggle-2">
+            <span class="ph__toggle-n">03</span>
+            <span class="ph__toggle-main">
+              <span class="ph__toggle-name">Villa Solenne</span>
+              <span class="ph__toggle-place">Palm Beach · 6 bed · 8 bath · 9,400 sq ft</span>
+            </span>
+            <span class="ph__toggle-price">Price on request</span>
+            <span class="ph__toggle-sign" aria-hidden="true"></span>
+          </button>
+          <div class="ph__detail" id="ph-detail-2">
+            <div>
+              <h3 class="pdetail__title">Villa Solenne</h3>
+              <p class="pdetail__place">Palm Beach, Florida · Ref. VPE-1592</p>
+              <p class="pdetail__price">Price on request</p>
+            </div>
+            <div>
+              <p class="pdetail__desc">A Mediterranean estate restored with contemporary interiors, held inside mature tropical gardens.</p>
+              <a class="ln ph__cta-d" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+              <a class="ln ph__cta-m" href="#contact">Request details <i class="arw" aria-hidden="true"></i></a>
+            </div>
+            <dl class="specs">
+              <div><dt>Bedrooms</dt><dd>6</dd></div>
+              <div><dt>Bathrooms</dt><dd>8</dd></div>
+              <div><dt>Interior</dt><dd>9,400 sq ft</dd></div>
+              <div><dt>Reference</dt><dd>VPE-1592</dd></div>
+            </dl>
           </div>
-          <div>
-            <p class="pdetail__desc">A Mediterranean estate restored with contemporary interiors, held inside mature tropical gardens.</p>
-            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
-          </div>
-          <dl class="specs">
-            <div><dt>Bedrooms</dt><dd>6</dd></div>
-            <div><dt>Bathrooms</dt><dd>8</dd></div>
-            <div><dt>Interior</dt><dd>9,400 sq ft</dd></div>
-            <div><dt>Reference</dt><dd>VPE-1592</dd></div>
-          </dl>
         </div>
       </article>
 
       <article class="ph__slide ph__prop" data-prop="3" aria-label="Ocean House No. 18">
         <div class="ph__media">
-          <img src="assets/prop-ocean-house.webp" alt="Ocean House No. 18, a stone and glass compound above the water" loading="lazy" width="2000" height="1300">
+          <img data-desktop-src="assets/prop-ocean-house.webp" alt="Ocean House No. 18, a stone and glass compound above the water" loading="lazy" width="2000" height="1300">
           <span class="ph__num" aria-hidden="true">04<sub>/ 04</sub></span>
         </div>
         <div class="ph__info">
-          <div>
-            <h3 class="pdetail__title">Ocean House No. 18</h3>
-            <p class="pdetail__place">Golden Beach, Florida Â· Ref. VPE-3104</p>
-            <p class="pdetail__price">$42,000,000</p>
+          <button type="button" class="ph__toggle" aria-expanded="false" aria-controls="ph-detail-3" id="ph-toggle-3">
+            <span class="ph__toggle-n">04</span>
+            <span class="ph__toggle-main">
+              <span class="ph__toggle-name">Ocean House No. 18</span>
+              <span class="ph__toggle-place">Golden Beach · 8 bed · 11 bath · 13,600 sq ft</span>
+            </span>
+            <span class="ph__toggle-price">$42,000,000</span>
+            <span class="ph__toggle-sign" aria-hidden="true"></span>
+          </button>
+          <div class="ph__detail" id="ph-detail-3">
+            <div>
+              <h3 class="pdetail__title">Ocean House No. 18</h3>
+              <p class="pdetail__place">Golden Beach, Florida · Ref. VPE-3104</p>
+              <p class="pdetail__price">$42,000,000</p>
+            </div>
+            <div>
+              <p class="pdetail__desc">An oceanfront compound with private beach access, a wellness pavilion and a separate guest residence.</p>
+              <a class="ln ph__cta-d" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
+              <a class="ln ph__cta-m" href="#contact">Request details <i class="arw" aria-hidden="true"></i></a>
+            </div>
+            <dl class="specs">
+              <div><dt>Bedrooms</dt><dd>8</dd></div>
+              <div><dt>Bathrooms</dt><dd>11</dd></div>
+              <div><dt>Interior</dt><dd>13,600 sq ft</dd></div>
+              <div><dt>Reference</dt><dd>VPE-3104</dd></div>
+            </dl>
           </div>
-          <div>
-            <p class="pdetail__desc">An oceanfront compound with private beach access, a wellness pavilion and a separate guest residence.</p>
-            <a class="ln" href="#contact" style="margin-top:1.6rem">View residence <i class="arw" aria-hidden="true"></i></a>
-          </div>
-          <dl class="specs">
-            <div><dt>Bedrooms</dt><dd>8</dd></div>
-            <div><dt>Bathrooms</dt><dd>11</dd></div>
-            <div><dt>Interior</dt><dd>13,600 sq ft</dd></div>
-            <div><dt>Reference</dt><dd>VPE-3104</dd></div>
-          </dl>
         </div>
       </article>
 
@@ -1415,7 +1712,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           </button>
         </li>
       </ol>
-      <p class="pindex__note">Portfolio 01 â€” 04</p>
+      <p class="pindex__note">Portfolio 01 — 04</p>
       <div class="stage__bar" id="stageBar" aria-hidden="true"><i class="is-on"></i><i></i><i></i><i></i></div>
       <p aria-live="polite" id="pLive" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);"></p>
     </div>
@@ -1459,7 +1756,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       <div class="head__meta"><span class="eyebrow eyebrow--accent">Why Veyra</span><span class="num">(06)</span></div>
       <h2 class="display h-lg" id="why-h" data-rv="up">Judgement,<br>not inventory.</h2>
       <figure class="why__figure" style="margin-top:clamp(2rem,4vw,3rem)" data-rv="fade">
-        <img data-parallax="15" src="assets/why-timber.webp" alt="A timber and glass residence held beneath an established canopy" loading="lazy" width="1200" height="1500">
+        <img data-parallax="15" data-desktop-src="assets/why-timber.webp" alt="A timber and glass residence held beneath an established canopy" loading="lazy" width="1200" height="1500">
       </figure>
     </div>
 
@@ -1482,7 +1779,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   </div>
 
   <div class="quotes" data-rv="fade">
-    <div class="quotes__stage" id="quoteStage">
+    <div class="quotes__stage" id="quoteStage" tabindex="0" aria-roledescription="carousel" aria-label="Client statements">
       <figure class="quote is-current">
         <blockquote>“They showed us four houses in eleven months, and told us to walk away from three of them. The fourth is where we live now.”</blockquote>
         <figcaption><cite>Founder, technology</cite><span class="quote__meta">Acquisition — Miami Beach</span></figcaption>
@@ -1497,14 +1794,15 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       </figure>
     </div>
     <div class="quotes__nav">
+      <p class="quotes__counter" id="quoteCounter" aria-live="polite" aria-atomic="true"><span class="quotes__counter-n">01</span> / 03</p>
       <div class="quotes__dots" id="quoteDots" role="group" aria-label="Client statements">
-        <button data-q="0" aria-current="true" aria-label="Statement one">01</button>
-        <button data-q="1" aria-label="Statement two">02</button>
-        <button data-q="2" aria-label="Statement three">03</button>
+        <button type="button" data-q="0" aria-current="true" aria-label="Statement one">01</button>
+        <button type="button" data-q="1" aria-label="Statement two">02</button>
+        <button type="button" data-q="2" aria-label="Statement three">03</button>
       </div>
       <div class="quotes__arrows">
-        <button id="quotePrev" aria-label="Previous statement">Prev</button>
-        <button id="quoteNext" aria-label="Next statement">Next</button>
+        <button type="button" id="quotePrev" aria-label="Previous statement">Prev</button>
+        <button type="button" id="quoteNext" aria-label="Next statement">Next</button>
       </div>
     </div>
   </div>
@@ -1548,29 +1846,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 <!-- ============================ 11. CONTACT ============================ -->
 <section id="contact" class="section-pad shell theme-dark" aria-labelledby="contact-h">
   <div class="contact__grid">
-    <div>
+    <div class="contact__copy">
       <div class="head__meta"><span class="eyebrow eyebrow--accent">Private consultation</span><span class="num">(09)</span></div>
       <h2 class="display h-lg" id="contact-h" data-rv="up">Begin a quiet<br>conversation.</h2>
-      <p class="lede" style="margin-top:clamp(1.6rem,3vw,2.2rem)" data-rv="up">Tell us what you are looking for, or what you are considering releasing. An advisor replies personally within one business day.</p>
-
-      <ul class="offices" data-rv="up">
-        <li><span class="o-city">Miami</span><span class="o-addr">1 Lincoln Road, Suite 900</span></li>
-        <li><span class="o-city">Palm Beach</span><span class="o-addr">250 Worth Avenue</span></li>
-        <li><span class="o-city">New York</span><span class="o-addr">415 Madison Avenue, 22nd Floor</span></li>
-        <li><span class="o-city">Direct</span><span class="o-addr"><a href="tel:+13055550147">+1 305 555 0147</a> · <a href="mailto:private@veyraestates.com">private@veyraestates.com</a></span></li>
-      </ul>
+      <p class="lede" data-rv="up">Tell us what you are looking for, or what you are considering releasing. An advisor replies personally within one business day.</p>
     </div>
 
     <form class="form" id="consultForm" novalidate data-rv="up">
       <div class="form__fields">
         <div class="field">
           <label for="f-name">Name</label>
-          <input id="f-name" name="name" type="text" autocomplete="name" required>
+          <input id="f-name" name="name" type="text" autocomplete="name" enterkeyhint="next" required>
           <span class="err" id="e-name">Please enter your name.</span>
         </div>
         <div class="field">
           <label for="f-email">Email</label>
-          <input id="f-email" name="email" type="email" autocomplete="email" required>
+          <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" enterkeyhint="next" required>
           <span class="err" id="e-email">Please enter a valid email address.</span>
         </div>
         <div class="field">
@@ -1585,7 +1876,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         </div>
         <div class="field">
           <label for="f-message">Brief</label>
-          <textarea id="f-message" name="message" rows="3" required placeholder="Market, budget range, timing, or the property you own."></textarea>
+          <textarea id="f-message" name="message" rows="4" required placeholder="Market, budget range, timing, or the property you own." enterkeyhint="send"></textarea>
           <span class="err" id="e-message">A sentence or two is enough.</span>
         </div>
       </div>
@@ -1595,6 +1886,13 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       </div>
       <p class="form__done" role="status" id="formDone">Thank you — your enquiry is with us. An advisor will reply personally within one business day.</p>
     </form>
+
+    <ul class="offices" data-rv="up" aria-label="Offices">
+      <li><span class="o-city">Miami</span><span class="o-addr">1 Lincoln Road, Suite 900</span></li>
+      <li><span class="o-city">Palm Beach</span><span class="o-addr">250 Worth Avenue</span></li>
+      <li><span class="o-city">New York</span><span class="o-addr">415 Madison Avenue, 22nd Floor</span></li>
+      <li><span class="o-city">Direct</span><span class="o-addr"><a href="tel:+13055550147">+1 305 555 0147</a> · <a href="mailto:private@veyraestates.com">private@veyraestates.com</a></span></li>
+    </ul>
   </div>
 </section>
 </main>
@@ -1890,21 +2188,40 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   }, { passive: true });
   onScroll();
 
+  var menuLinks = $$('a', menu);
   function setMenu(open) {
     menu.classList.toggle('is-open', open);
     menu.setAttribute('aria-hidden', String(!open));
     nav.classList.toggle('is-open', open);
     navToggle.setAttribute('aria-expanded', String(open));
     document.body.classList.toggle('is-locked', open);
-    if (open) nav.classList.remove('is-hidden');
+    if ('inert' in menu) menu.inert = !open;
+    else menuLinks.forEach(function (a) {
+      if (open) a.removeAttribute('tabindex');
+      else a.setAttribute('tabindex', '-1');
+    });
+    if (open) {
+      nav.classList.remove('is-hidden');
+      var first = menuLinks[0];
+      if (first) window.setTimeout(function () { first.focus(); }, 0);
+    }
     onScroll();
   }
+  setMenu(false);
   // the bar is only translated off-screen, so its links stay in the tab order
   nav.addEventListener('focusin', function () { nav.classList.remove('is-hidden'); });
   navToggle.addEventListener('click', function () { setMenu(!menu.classList.contains('is-open')); });
-  $$('a', menu).forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+  menuLinks.forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && menu.classList.contains('is-open')) { setMenu(false); navToggle.focus(); }
+    if (!menu.classList.contains('is-open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); setMenu(false); navToggle.focus(); return; }
+    if (e.key !== 'Tab' || !menuLinks.length) return;
+    var first = menuLinks[0], last = menuLinks[menuLinks.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
   });
 
   var navLinks = $$('.nav__link');
@@ -2046,6 +2363,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   }
   window.addEventListener('scroll', refreshPortfolioIfNeeded, { passive: true });
 
+  function setSvcPanelHidden(panel, hidden) {
+    if (!panel) return;
+    panel.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if ('inert' in panel) panel.inert = !!hidden;
+  }
   function collapse(btn) {
     var item = btn.closest('.svc__item');
     var panel = document.getElementById(btn.getAttribute('aria-controls'));
@@ -2056,15 +2378,24 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       G.set(panel, { height: panel.offsetHeight });
       G.to(panel, {
         height: 0, duration: 0.6, ease: 'power3.inOut',
-        onComplete: function () { markSvcLayoutDirty(); releaseSvcScrollLock(); }
+        onComplete: function () {
+          setSvcPanelHidden(panel, true);
+          markSvcLayoutDirty();
+          releaseSvcScrollLock();
+        }
       });
-    } else { panel.style.height = '0px'; markSvcLayoutDirty(); }
+    } else {
+      panel.style.height = '0px';
+      setSvcPanelHidden(panel, true);
+      markSvcLayoutDirty();
+    }
   }
   function expand(btn) {
     var item = btn.closest('.svc__item');
     var panel = document.getElementById(btn.getAttribute('aria-controls'));
     btn.setAttribute('aria-expanded', 'true');
     item.classList.add('is-open');
+    setSvcPanelHidden(panel, false);
     if (animate) {
       acquireSvcScrollLock();
       G.to(panel, {
@@ -2077,6 +2408,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       });
     } else { panel.style.height = 'auto'; markSvcLayoutDirty(); }
   }
+  $$('.svc__panel').forEach(function (panel) { setSvcPanelHidden(panel, true); });
   $$('.svc__btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.preventDefault();
@@ -2283,22 +2615,219 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     }
   })();
 
+  /* Shared mobile layout query — keep CSS (width < 760px) and JS in lockstep */
+  var mobileLayoutMq = window.matchMedia('(width < 760px)');
+  function isMobileLayout() { return mobileLayoutMq.matches; }
+
   rows.forEach(function (row) {
-    row.addEventListener('click', function () {
+    row.addEventListener('click', function (e) {
+      if (e.target.closest('.index__cta')) return;
       var i = parseInt(row.getAttribute('data-goto'), 10);
-      if (!isNaN(i)) setProperty(i);
+      if (isNaN(i)) return;
+      if (isMobileLayout()) {
+        openMobilePortfolioItem(i, { scroll: true });
+      } else {
+        setProperty(i);
+      }
     });
   });
 
   /* ----------------------------------------------------------
-     Client statements
+     Mobile Selected Residences — snap rail counter (IO, no rAF loop)
+     ---------------------------------------------------------- */
+  var indexCounter = $('#indexCounter');
+  var indexCounterN = indexCounter ? indexCounter.querySelector('.index__counter-n') : null;
+  var indexRailIO = null;
+  var indexLinks = $$('.index__link');
+
+  function setIndexCounter(i) {
+    if (!indexCounterN) return;
+    var n = Math.max(1, Math.min(rows.length, (i || 0) + 1));
+    indexCounterN.textContent = (n < 10 ? '0' : '') + n;
+  }
+
+  function syncIndexLinkA11y(mobile) {
+    indexLinks.forEach(function (a) {
+      if (mobile) {
+        a.setAttribute('tabindex', '-1');
+        a.setAttribute('aria-hidden', 'true');
+      } else {
+        a.removeAttribute('tabindex');
+        a.removeAttribute('aria-hidden');
+      }
+    });
+  }
+
+  function initIndexRail() {
+    if (indexRailIO) { indexRailIO.disconnect(); indexRailIO = null; }
+    var mobile = isMobileLayout();
+    syncIndexLinkA11y(mobile);
+    if (!indexList || !rows.length || !mobile) {
+      setIndexCounter(0);
+      return;
+    }
+    if (!('IntersectionObserver' in window)) {
+      setIndexCounter(0);
+      return;
+    }
+    var ratios = new Array(rows.length).fill(0);
+    indexRailIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var idx = rows.indexOf(en.target);
+        if (idx < 0) return;
+        ratios[idx] = en.isIntersecting ? en.intersectionRatio : 0;
+      });
+      var best = 0, bestR = -1;
+      for (var k = 0; k < ratios.length; k++) {
+        if (ratios[k] > bestR) { bestR = ratios[k]; best = k; }
+      }
+      setIndexCounter(best);
+    }, { root: indexList, threshold: [0.35, 0.55, 0.75, 0.9] });
+    rows.forEach(function (row) { indexRailIO.observe(row); });
+    setIndexCounter(0);
+  }
+
+  /* ----------------------------------------------------------
+     Mobile portfolio — compact expandable specs + unload heavy media
+     ---------------------------------------------------------- */
+  var phProps = $$('#portfolioRail .ph__prop');
+  var phMediaImgs = $$('#portfolioRail .ph__media img');
+  var whyMediaImg = document.querySelector('#why .why__figure img');
+  var deferredDesktopImgs = phMediaImgs.concat(whyMediaImg ? [whyMediaImg] : []);
+  var phMobileWired = false;
+
+  function setPortfolioMediaLoading(mobile) {
+    deferredDesktopImgs.forEach(function (img) {
+      if (!img) return;
+      if (!img.dataset.desktopSrc) {
+        img.dataset.desktopSrc = img.getAttribute('data-desktop-src') || img.getAttribute('src') || '';
+      }
+      if (mobile) {
+        if (!img.dataset.desktopSrc) return;
+        img.removeAttribute('src');
+        img.removeAttribute('srcset');
+        img.setAttribute('aria-hidden', 'true');
+      } else if (img.dataset.desktopSrc) {
+        if (img.getAttribute('src') !== img.dataset.desktopSrc) {
+          img.setAttribute('src', img.dataset.desktopSrc);
+        }
+        img.removeAttribute('aria-hidden');
+      }
+    });
+  }
+
+  function syncPortfolioDetailState(prop, open) {
+    var btn = prop.querySelector('.ph__toggle');
+    var detail = prop.querySelector('.ph__detail');
+    prop.classList.toggle('is-open', open);
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (detail) {
+      if (open) detail.removeAttribute('hidden');
+      else detail.setAttribute('hidden', '');
+      detail.setAttribute('aria-hidden', open ? 'false' : 'true');
+      if ('inert' in detail) detail.inert = !open;
+    }
+  }
+
+  function openMobilePortfolioItem(i, opts) {
+    if (!phProps.length) return;
+    i = Math.max(0, Math.min(phProps.length - 1, i));
+    opts = opts || {};
+    phProps.forEach(function (prop, k) {
+      syncPortfolioDetailState(prop, k === i);
+    });
+    markProperty(i);
+    if (opts.scroll !== false) {
+      var target = phProps[i].querySelector('.ph__toggle') || phProps[i];
+      // Single frame wait so expand layout settles before scrolling (not a loop)
+      window.requestAnimationFrame(function () {
+        target.scrollIntoView({
+          behavior: MOTION ? 'smooth' : 'auto',
+          block: 'start'
+        });
+      });
+    }
+  }
+
+  function closeMobilePortfolioItems() {
+    phProps.forEach(function (prop) {
+      syncPortfolioDetailState(prop, false);
+    });
+  }
+
+  function initMobilePortfolio() {
+    var mobile = isMobileLayout();
+    setPortfolioMediaLoading(mobile);
+    if (!mobile) {
+      // Desktop: details always visible; clear mobile accordion state + hidden attrs
+      phProps.forEach(function (prop) {
+        prop.classList.remove('is-open');
+        var btn = prop.querySelector('.ph__toggle');
+        var detail = prop.querySelector('.ph__detail');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        if (detail) {
+          detail.removeAttribute('hidden');
+          detail.removeAttribute('aria-hidden');
+          if ('inert' in detail) detail.inert = false;
+        }
+      });
+      return;
+    }
+    // Ensure closed details start with hidden for AT
+    phProps.forEach(function (prop) {
+      if (!prop.classList.contains('is-open')) syncPortfolioDetailState(prop, false);
+    });
+    if (phMobileWired) return;
+    phMobileWired = true;
+    phProps.forEach(function (prop, i) {
+      var btn = prop.querySelector('.ph__toggle');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var open = prop.classList.contains('is-open');
+        if (open) syncPortfolioDetailState(prop, false);
+        else openMobilePortfolioItem(i, { scroll: false });
+      });
+    });
+    $$('.index__cta').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var i = parseInt(a.getAttribute('data-goto'), 10);
+        if (isNaN(i) || !isMobileLayout()) return;
+        e.preventDefault();
+        if (history.replaceState) {
+          history.replaceState(null, '', '#ph-toggle-' + i);
+        }
+        openMobilePortfolioItem(i, { scroll: true });
+      });
+    });
+  }
+
+  function applyMobilePortfolioHash() {
+    if (!isMobileLayout()) return;
+    var m = (location.hash || '').match(/^#ph-toggle-(\d+)$/);
+    if (!m) return;
+    openMobilePortfolioItem(parseInt(m[1], 10), { scroll: true });
+  }
+
+  // Unload portfolio media immediately on mobile so prop-* never competes with the rail
+  if (isMobileLayout()) setPortfolioMediaLoading(true);
+
+  /* ----------------------------------------------------------
+     Client statements — counter + swipe (no autoplay)
      ---------------------------------------------------------- */
   var quotes = $$('.quote'), qDots = $$('#quoteDots button'), qi = 0;
+  var quoteStage = $('#quoteStage');
+  var quoteCounterN = $('#quoteCounter') ? $('#quoteCounter').querySelector('.quotes__counter-n') : null;
   quotes.forEach(function (q, k) { if (k !== 0) q.setAttribute('aria-hidden', 'true'); });
+
+  function setQuoteCounter(i) {
+    if (!quoteCounterN) return;
+    var n = Math.max(1, Math.min(quotes.length, (i || 0) + 1));
+    quoteCounterN.textContent = (n < 10 ? '0' : '') + n;
+  }
 
   function setQuote(i) {
     i = (i % quotes.length + quotes.length) % quotes.length;
-    if (i === qi) return;
+    if (i === qi) { setQuoteCounter(i); return; }
     quotes[qi].classList.remove('is-current');
     quotes[qi].setAttribute('aria-hidden', 'true');
     if (qDots[qi]) qDots[qi].removeAttribute('aria-current');
@@ -2306,12 +2835,37 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     quotes[qi].classList.add('is-current');
     quotes[qi].removeAttribute('aria-hidden');
     if (qDots[qi]) qDots[qi].setAttribute('aria-current', 'true');
+    setQuoteCounter(qi);
     if (animate) G.fromTo(quotes[qi], { y: 16 }, { y: 0, duration: 1, ease: 'expo.out' });
   }
+  setQuoteCounter(0);
   qDots.forEach(function (b) { b.addEventListener('click', function () { setQuote(parseInt(b.dataset.q, 10)); }); });
   var qn = $('#quoteNext'), qp = $('#quotePrev');
   if (qn) qn.addEventListener('click', function () { setQuote(qi + 1); });
   if (qp) qp.addEventListener('click', function () { setQuote(qi - 1); });
+
+  // Native-feeling horizontal swipe; vertical scroll stays free
+  if (quoteStage) {
+    var qTouchX = 0, qTouchY = 0, qDragging = false;
+    quoteStage.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      qDragging = true; qTouchX = e.clientX; qTouchY = e.clientY;
+    });
+    quoteStage.addEventListener('pointerup', function (e) {
+      if (!qDragging) return;
+      qDragging = false;
+      var dx = e.clientX - qTouchX;
+      var dy = e.clientY - qTouchY;
+      if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy)) return;
+      if (dx < 0) setQuote(qi + 1);
+      else setQuote(qi - 1);
+    });
+    quoteStage.addEventListener('pointercancel', function () { qDragging = false; });
+    quoteStage.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { e.preventDefault(); setQuote(qi + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setQuote(qi - 1); }
+    });
+  }
 
   /* ----------------------------------------------------------
      Consultation form
@@ -2324,21 +2878,37 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       ['f-interest', function (v) { return !!v; }],
       ['f-message', function (v) { return v.trim().length > 3; }]
     ];
+    function syncFieldValidity(el, ok) {
+      var field = el.closest('.field');
+      var err = field ? field.querySelector('.err') : null;
+      field.classList.toggle('is-invalid', !ok);
+      if (ok) {
+        el.removeAttribute('aria-invalid');
+        el.removeAttribute('aria-describedby');
+        if (err) err.removeAttribute('role');
+      } else {
+        el.setAttribute('aria-invalid', 'true');
+        if (err) {
+          el.setAttribute('aria-describedby', err.id);
+          err.setAttribute('role', 'alert');
+        }
+      }
+    }
     checks.forEach(function (c) {
       var el = document.getElementById(c[0]);
       el.addEventListener('input', function () {
-        if (c[1](el.value)) { el.closest('.field').classList.remove('is-invalid'); el.removeAttribute('aria-invalid'); }
+        if (c[1](el.value)) syncFieldValidity(el, true);
       });
     });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (form.classList.contains('is-sent')) return;
       var first = null;
       checks.forEach(function (c) {
         var el = document.getElementById(c[0]);
         var ok = c[1](el.value);
-        el.closest('.field').classList.toggle('is-invalid', !ok);
-        if (!ok) { el.setAttribute('aria-invalid', 'true'); if (!first) first = el; }
-        else el.removeAttribute('aria-invalid');
+        syncFieldValidity(el, ok);
+        if (!ok && !first) first = el;
       });
       if (first) { first.focus(); return; }
       form.classList.add('is-sent');
@@ -3100,6 +3670,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       var camZ = CAM_Z0, camY = 3.4 + FRAME_Y * 0.16;
       var lookY = 3.0;
       var frozen = false;
+      var frozenDrawn = false;
       var lastW = 0, lastH = 0;
 
       function frame(v) {
@@ -3120,7 +3691,11 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 
       function render(t) {
         if (frozen) {
-          renderer.render(scene, camera);
+          // Draw the freeze frame once — avoid perpetual identical GL work
+          if (!frozenDrawn) {
+            renderer.render(scene, camera);
+            frozenDrawn = true;
+          }
           return;
         }
         var x = Math.sin(t * 0.04) * 0.04;
@@ -3146,7 +3721,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         camera.updateProjectionMatrix();
       }
 
-      function freezeAt(on) { frozen = !!on; }
+      function freezeAt(on) {
+        on = !!on;
+        if (on === frozen) return;
+        frozen = on;
+        if (!frozen) frozenDrawn = false;
+      }
 
       function countTris() {
         var n = 0;
@@ -3375,18 +3955,6 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       view.size();
       paint(p);
       view.render(0, drift);
-      if (progressive && built) {
-        // Mobile LOD metrics for QA (desktop path unchanged)
-        try {
-          window.__veyraMobileStats = {
-            tris: built.tris,
-            draws: built.draws,
-            texKB: Math.round((typeof built.texBytes === 'function' ? built.texBytes() : (built.texBytes || 0)) / 1024),
-            tier: built.tier || 'B',
-            canvas: { w: canvas.width, h: canvas.height }
-          };
-        } catch (err) {}
-      }
       if (progressive) {
         // mobile: first frame under the static plate, then soft crossfade
         requestAnimationFrame(function () {
@@ -3461,6 +4029,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     window.scrollTo(0, 0);
 
     initHoverPreview();
+    initIndexRail();
+    initMobilePortfolio();
+    applyMobilePortfolioHash();
 
     var t0 = performance.now();
     var minHold = MOTION ? 1500 : 300;
@@ -3468,6 +4039,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     loaderIntro();
     // start the new hero during the loader so the facade never appears underneath
     initHeroDolly();
+
+    var mobileUiTimer = 0;
+    function refreshMobileUi() {
+      clearTimeout(mobileUiTimer);
+      mobileUiTimer = setTimeout(function () {
+        initIndexRail();
+        initMobilePortfolio();
+      }, 140);
+    }
+    window.addEventListener('resize', refreshMobileUi, { passive: true });
+    if (mobileLayoutMq.addEventListener) {
+      mobileLayoutMq.addEventListener('change', refreshMobileUi);
+    } else if (mobileLayoutMq.addListener) {
+      mobileLayoutMq.addListener(refreshMobileUi);
+    }
+    window.addEventListener('hashchange', applyMobilePortfolioHash);
 
     function heroReady() {
       return new Promise(function (resolve) {
