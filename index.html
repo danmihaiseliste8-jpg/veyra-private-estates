@@ -361,7 +361,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   transition:opacity .85s var(--ease);
 }
 .hero__canvas.is-live{opacity:1;}
-.hero__media.is-gl .hero__interior{opacity:0;}
+.hero__media.is-gl .hero__interior{opacity:0;will-change:auto;}
 .hero__media::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:1;opacity:var(--veil,1);
   background:
@@ -2263,7 +2263,8 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
       media.style.setProperty('--veil', (1 - cut(v, 0.35, 0.82) * 0.94).toFixed(3));
       if (isDesktopHero) {
-        // Desktop unchanged: ivory wash lands as the camera settles
+        // Desktop: ivory wash lands as the camera settles (timing unchanged).
+        // At wash ≥ ~1 the GL frame is fully covered — render is suspended in loop.
         wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
         hero.style.opacity = (1 - ease(cut(v, 0.97, 1)) * 0.02).toFixed(3);
       } else {
@@ -2283,7 +2284,13 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         hero.style.opacity = '1';
       }
       heroDolly.inside = v > 0.72;
-      if (view) view.frame(v); else paintPlates(v);
+      // Skip camera/fog updates once the desktop wash fully covers the canvas;
+      // reverse scroll below 0.96 resumes framing on the next paint.
+      if (view) {
+        if (!(isDesktopHero && v >= 0.96)) view.frame(v);
+      } else {
+        paintPlates(v);
+      }
       // Freeze after framing this tick so the last safe pose is stored, not skipped
       if (!isDesktopHero && view && typeof view.freezeAt === 'function') {
         view.freezeAt(v >= 0.84);
@@ -3005,24 +3012,73 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     }
 
     var running = false, raf = null, onView = true, t0 = 0;
+    var glCovered = false;
+    var residencesPrepared = false;
+
+    // Desktop: decode Selected Residences thumbs before the sticky handoff so
+    // lazy-load + decode does not contend with unpin / wash compositing.
+    function prepareResidences() {
+      if (!isDesktopHero || residencesPrepared) return;
+      residencesPrepared = true;
+      $$('#residences .index__thumb img').forEach(function (img) {
+        try {
+          if (img.loading === 'lazy') img.loading = 'eager';
+          if (typeof img.decode === 'function') img.decode().catch(function () {});
+        } catch (err) {}
+      });
+      var previewImg = preview && preview.querySelector('img');
+      if (previewImg && typeof previewImg.decode === 'function') {
+        previewImg.decode().catch(function () {});
+      }
+    }
+
+    function setGlCovered(covered) {
+      if (!isDesktopHero || covered === glCovered) return;
+      glCovered = covered;
+      var glCanvas = $('#heroCanvas');
+      if (glCanvas) glCanvas.style.visibility = covered ? 'hidden' : 'visible';
+    }
 
     function apply(v) {
       p = v;
       paint(p);
-      if (view) view.frame(p);
+      // paint() already frames the camera — do not double-call view.frame
     }
     function loop(now) {
       if (!t0) t0 = now;
       p += (target - p) * 0.12;
-      if (Math.abs(target - p) < 0.0004) p = target;
+      var settled = Math.abs(target - p) < 0.0004;
+      if (settled) p = target;
       drift += (aim - drift) * 0.045;
-      paint(p);
-      if (view) view.render((now - t0) / 1000, drift);
+      var covered = isDesktopHero && p >= 0.96;
+      // Once the ivory wash fully covers a settled desktop frame, skip paint+render
+      // so sticky unpin / residences enter without competing style + WebGL work.
+      if (!(covered && settled && Math.abs(aim - drift) < 0.002 && glCovered)) {
+        paint(p);
+      }
+      if (view) {
+        if (covered) {
+          setGlCovered(true);
+        } else {
+          setGlCovered(false);
+          view.render((now - t0) / 1000, drift);
+        }
+      }
       raf = requestAnimationFrame(loop);
     }
-    function play() { if (!running) { running = true; raf = requestAnimationFrame(loop); } }
+    function play() {
+      if (!running) {
+        if (isDesktopHero && p < 0.96) setGlCovered(false);
+        running = true;
+        raf = requestAnimationFrame(loop);
+      }
+    }
     function halt() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
-    function settle(v) { target = v; apply(v); if (view) view.render(0, drift); }
+    function settle(v) {
+      target = v;
+      apply(v);
+      if (view && !(isDesktopHero && v >= 0.96)) view.render(0, drift);
+    }
 
     heroDolly.active = true;
     ST.create({
@@ -3034,11 +3090,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       // scroll owns the framing; the rAF loop only softens it and adds drift
       onUpdate: function (self) {
         target = self.progress;
+        if (isDesktopHero && self.progress >= 0.5) prepareResidences();
         apply(target);
         if (nav) onScroll();
       },
       onLeave: function () { settle(1); if (nav) onScroll(); },
-      onLeaveBack: function () { settle(0); if (nav) onScroll(); }
+      onLeaveBack: function () { settle(0); setGlCovered(false); if (nav) onScroll(); }
     });
 
     // Mobile: keep pin metrics in sync when the browser chrome resizes the visual viewport.
@@ -3122,10 +3179,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
           });
         });
       } else {
-        // desktop: immediate handoff (unchanged)
+        // desktop: immediate handoff (unchanged visually)
         media.classList.add('is-gl');
         canvas.classList.add('is-live');
         if (ST) ST.refresh();
+        // Warm residence thumbs while the dolly still has headroom
+        if (window.requestIdleCallback) {
+          requestIdleCallback(function () { prepareResidences(); }, { timeout: 1400 });
+        } else {
+          setTimeout(prepareResidences, 500);
+        }
       }
       bindViewResize();
     }
