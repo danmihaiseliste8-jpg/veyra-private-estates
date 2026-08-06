@@ -2202,13 +2202,27 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
         hero.style.opacity = (1 - ease(cut(v, 0.97, 1)) * 0.02).toFixed(3);
       } else {
-        // Mobile: keep the pinned hero fully opaque and dark through the dolly;
-        // hand off to ivory only at the final unpin beat so no white strip flashes
-        wash.style.opacity = ease(cut(v, 0.985, 1)).toFixed(3);
+        // Mobile: never flash ivory wash over a live WebGL frame. Near the end,
+        // crossfade to the static plate while holding the last safe 3D frame,
+        // then unpin onto the next section with the hero still fully opaque.
+        var plateIn = ease(cut(v, 0.84, 0.92));
+        var glCanvas = $('#heroCanvas');
+        if (view && interior) {
+          interior.style.opacity = plateIn.toFixed(3);
+          interior.style.transform = 'scale(1.06)';
+        }
+        if (view && glCanvas) {
+          glCanvas.style.opacity = (1 - plateIn).toFixed(3);
+        }
+        wash.style.opacity = '0';
         hero.style.opacity = '1';
       }
       heroDolly.inside = v > 0.72;
       if (view) view.frame(v); else paintPlates(v);
+      // Freeze after framing this tick so the last safe pose is stored, not skipped
+      if (!isDesktopHero && view && typeof view.freezeAt === 'function') {
+        view.freezeAt(v >= 0.84);
+      }
     }
 
     /* ---- the residence, built rather than filmed ---- */
@@ -2698,45 +2712,71 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       // Camera sits slightly above the look target so the corridor rises into the
       // upper half; vertical travel is intentionally small so empty black does not
       // return mid-dolly. Vanishing point stays on the midline for the headline.
-      var camZ = 12, camY = 3.55 + FRAME_Y * 0.18;
+      //
+      // Critical: do NOT dolly to camZ=-36 (old 12-e*48). That lands inside the
+      // facade beside portalLit and produces a one-frame color blowout on mobile GPUs.
+      var CAM_Z0 = 12, CAM_Z1 = -26, DOLLY_END = 0.82;
+      var camZ = CAM_Z0, camY = 3.55 + FRAME_Y * 0.18;
       var lookY = 2.55;
+      var frozen = false;
+      var lastW = 0, lastH = 0;
 
       function frame(v) {
-        var e = ease(v);
-        camZ = 12 - e * 48;
+        v = Math.max(0, Math.min(1, Number(v) || 0));
+        // While frozen, hold the safe end pose; still accept updates when scrubbing back
+        if (frozen && v >= 0.84) return;
+        var t = Math.min(v, DOLLY_END) / DOLLY_END;
+        var e = ease(t);
+        camZ = CAM_Z0 + (CAM_Z1 - CAM_Z0) * e;
         camY = (3.55 + FRAME_Y * 0.18) - e * 0.18;
         camera.fov = 50 - e * 5;
         camera.updateProjectionMatrix();
-        // Keep end wash restrained so type stays readable over the scene
-        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.55, 1)) * 0.62);
+        // Keep fog dark through the handoff — no bright ivory flash in the GL buffer
+        scene.fog.color.copy(DUSK).lerp(IVORY, ease(cut(v, 0.55, DOLLY_END)) * 0.28);
         scene.background.copy(scene.fog.color);
         scene.fog.near = 22 - e * 5;
         scene.fog.far = 88 - e * 36;
-        renderer.toneMappingExposure = 0.98 + ease(cut(v, 0.5, 1)) * 0.12;
+        renderer.toneMappingExposure = 0.98 + ease(cut(v, 0.5, DOLLY_END)) * 0.08;
       }
 
       function render(t) {
-        camera.position.set(Math.sin(t * 0.03) * 0.03, camY, camZ);
+        if (frozen) {
+          // Hold the last valid frame; do not advance into the facade/light.
+          renderer.render(scene, camera);
+          return;
+        }
+        var x = Math.sin(t * 0.03) * 0.03;
+        if (!isFinite(camZ) || !isFinite(camY) || !isFinite(x)) return;
+        camera.position.set(x, camY, camZ);
         camera.lookAt(0, lookY, -70);
         renderer.render(scene, camera);
       }
 
       function size() {
         var w = hero.clientWidth, h = hero.clientHeight;
+        if (!isFinite(w) || !isFinite(h) || w < 2 || h < 2) return;
+        if (w === lastW && h === lastH) return;
+        lastW = w; lastH = h;
         var scale = 0.85;
-        renderer.setSize(Math.max(1, Math.floor(w * scale)), Math.max(1, Math.floor(h * scale)), false);
+        var rw = Math.max(1, Math.floor(w * scale));
+        var rh = Math.max(1, Math.floor(h * scale));
+        renderer.setSize(rw, rh, false);
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
-        camera.aspect = w / Math.max(1, h);
-        // Shift projection so architecture sits higher (~15% of viewport) while the
+        camera.aspect = w / h;
+        // Shift projection so architecture sits higher (~18% of viewport) while the
         // vanishing point remains on the center axis under the headline.
         var bias = Math.round(h * 0.18);
         camera.setViewOffset(w, h, 0, bias, w, h);
         camera.updateProjectionMatrix();
       }
 
+      function freezeAt(on) {
+        frozen = !!on;
+      }
+
       frame(0);
-      return { frame: frame, render: render, size: size };
+      return { frame: frame, render: render, size: size, freezeAt: freezeAt };
     }
 
     var running = false, raf = null, onView = true, t0 = 0;
@@ -2776,14 +2816,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       onLeaveBack: function () { settle(0); if (nav) onScroll(); }
     });
 
-    // Mobile: keep pin metrics in sync when the browser chrome resizes the visual viewport
+    // Mobile: keep pin metrics in sync when the browser chrome resizes the visual viewport.
+    // Skip ScrollTrigger.refresh during the final handoff — a mid-scrub refresh can
+    // briefly zero layout and expose a bad GL frame.
     if (!isDesktopHero) {
       var vvTimer;
       function onMobileViewport() {
         clearTimeout(vvTimer);
         vvTimer = setTimeout(function () {
           if (view) view.size();
-          if (ST) ST.refresh();
+          if (ST && target < 0.8) ST.refresh();
         }, 120);
       }
       window.addEventListener('resize', onMobileViewport, { passive: true });
