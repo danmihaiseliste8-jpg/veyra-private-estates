@@ -522,6 +522,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
    ============================================================ */
 .svc{border-top:1px solid var(--hair);margin-top:clamp(3rem,5vw,4.5rem);}
 .svc__item{border-bottom:1px solid var(--hair);}
+#services,.svc,#services-list{overflow-anchor:none;}
 .svc__btn{
   width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:1.4rem;
   padding-block:clamp(1.5rem,2.7vw,2.2rem);text-align:left;
@@ -1859,25 +1860,73 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   /* ----------------------------------------------------------
      Services accordion
      ---------------------------------------------------------- */
-  // Expanding/collapsing changes document height above the pinned portfolio.
-  // ScrollTrigger.refresh() is required so pin start/end stay correct, but a
-  // bare refresh re-anchors scroll into the portfolio pin — restore Y after.
-  function refreshSTKeepScroll() {
-    if (!ST) return;
+  // Expanding panels change document height above the pinned portfolio track.
+  // A live ScrollTrigger.refresh() (or smooth-scroll chasing the reflow) re-anchors
+  // into that pin. Lock scroll for the animation, skip refresh here, and only
+  // refresh once the portfolio approaches — with scroll locked and smooth off.
+  var svcLayoutDirty = false;
+  var svcScrollLocks = 0;
+  var svcScrollY = 0;
+  var svcScrollPrevBehavior = '';
+  var svcScrollRaf = 0;
+  function holdSvcScroll() {
+    if (svcScrollLocks <= 0) { svcScrollRaf = 0; return; }
+    if (Math.abs((window.pageYOffset || 0) - svcScrollY) > 0.5) window.scrollTo(0, svcScrollY);
+    svcScrollRaf = requestAnimationFrame(holdSvcScroll);
+  }
+  function acquireSvcScrollLock() {
+    if (svcScrollLocks === 0) {
+      svcScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      svcScrollPrevBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      if (!svcScrollRaf) svcScrollRaf = requestAnimationFrame(holdSvcScroll);
+    }
+    svcScrollLocks++;
+  }
+  function releaseSvcScrollLock() {
+    svcScrollLocks = Math.max(0, svcScrollLocks - 1);
+    if (svcScrollLocks === 0) {
+      window.scrollTo(0, svcScrollY);
+      document.documentElement.style.scrollBehavior = svcScrollPrevBehavior;
+    }
+  }
+  function markSvcLayoutDirty() {
+    svcLayoutDirty = true;
+  }
+  function refreshPortfolioIfNeeded() {
+    if (!svcLayoutDirty || !ST || svcScrollLocks > 0) return;
+    var track = document.getElementById('portfolioTrack');
+    if (!track) return;
+    var top = track.getBoundingClientRect().top;
+    // Refresh only as the portfolio approaches, before the pin engages
+    if (top > window.innerHeight * 1.4 || top < 80) return;
+    svcLayoutDirty = false;
     var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var html = document.documentElement;
+    var prevBehavior = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
     ST.refresh();
     window.scrollTo(0, y);
-    requestAnimationFrame(function () { window.scrollTo(0, y); });
+    requestAnimationFrame(function () {
+      window.scrollTo(0, y);
+      html.style.scrollBehavior = prevBehavior;
+    });
   }
+  window.addEventListener('scroll', refreshPortfolioIfNeeded, { passive: true });
+
   function collapse(btn) {
     var item = btn.closest('.svc__item');
     var panel = document.getElementById(btn.getAttribute('aria-controls'));
     btn.setAttribute('aria-expanded', 'false');
     item.classList.remove('is-open');
     if (animate) {
+      acquireSvcScrollLock();
       G.set(panel, { height: panel.offsetHeight });
-      G.to(panel, { height: 0, duration: 0.6, ease: 'power3.inOut', onComplete: refreshSTKeepScroll });
-    } else { panel.style.height = '0px'; }
+      G.to(panel, {
+        height: 0, duration: 0.6, ease: 'power3.inOut',
+        onComplete: function () { markSvcLayoutDirty(); releaseSvcScrollLock(); }
+      });
+    } else { panel.style.height = '0px'; markSvcLayoutDirty(); }
   }
   function expand(btn) {
     var item = btn.closest('.svc__item');
@@ -1885,14 +1934,20 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     btn.setAttribute('aria-expanded', 'true');
     item.classList.add('is-open');
     if (animate) {
+      acquireSvcScrollLock();
       G.to(panel, {
         height: panel.firstElementChild.offsetHeight, duration: 0.75, ease: 'power3.inOut',
-        onComplete: function () { panel.style.height = 'auto'; refreshSTKeepScroll(); }
+        onComplete: function () {
+          panel.style.height = 'auto';
+          markSvcLayoutDirty();
+          releaseSvcScrollLock();
+        }
       });
-    } else { panel.style.height = 'auto'; }
+    } else { panel.style.height = 'auto'; markSvcLayoutDirty(); }
   }
   $$('.svc__btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
       var open = btn.getAttribute('aria-expanded') === 'true';
       $$('.svc__btn').forEach(function (b) {
         if (b !== btn && b.getAttribute('aria-expanded') === 'true') collapse(b);
