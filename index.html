@@ -381,7 +381,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   .hero{
     --hero-headline-to-copy:28px;
     --hero-copy-to-cta:26px;
-    --hero-cta-to-meta:72px;
+    --hero-cta-to-cue:22px;
     justify-content:flex-end;
     padding-bottom:clamp(1.25rem,3.5vh,2rem);
   }
@@ -408,15 +408,22 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     box-sizing:border-box;
   }
   .hero__cta .arw{margin-left:.15em;}
-  /* Foot (meta + cue) sits low; whole block reveals with dolly progress */
+  /* Mobile: metadata/coordinates gone entirely; foot is scroll-cue only */
+  .hero__meta{display:none!important;}
   .hero__foot{
-    margin-top:var(--hero-cta-to-meta);
-    padding-top:1rem;
-    border-top-color:rgba(241,235,225,.1);
+    margin-top:var(--hero-cta-to-cue);
+    padding-top:0;
+    border-top:0;
     flex-shrink:0;
-    opacity:0;
-    transform:translate3d(0,16px,0);
-    will-change:opacity,transform;
+    gap:0;
+    justify-content:flex-start;
+    opacity:1;
+    transform:none;
+    will-change:auto;
+  }
+  .hero .scroll-cue{
+    opacity:1;
+    will-change:opacity;
   }
 }
 .hero__canvas{
@@ -504,6 +511,19 @@ section{position:relative;background:var(--bg);color:var(--fg);}
   position:relative;z-index:2;margin-top:clamp(2.6rem,5vw,4rem);
   display:flex;flex-wrap:wrap;gap:1.4rem 2.6rem;align-items:center;justify-content:space-between;
   padding-top:1.4rem;border-top:1px solid rgba(241,235,225,.18);
+}
+/* Mobile foot overrides must follow the base .hero__foot rule (cascade) */
+@media(max-width:759px){
+  .hero__meta{display:none!important;}
+  .hero__foot{
+    margin-top:var(--hero-cta-to-cue,22px);
+    padding-top:0;
+    border-top:0;
+    gap:0;
+    justify-content:flex-start;
+    opacity:1;
+    transform:none;
+  }
 }
 .hero__meta{display:flex;flex-wrap:wrap;gap:1rem 2.4rem;}
 .hero__meta span{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(241,235,225,.55);}
@@ -1672,7 +1692,9 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       el.style.transform = 'none';
       el.style.opacity = '1';
     });
-    // Mobile foot starts CSS-hidden for the progress reveal; reduced-motion must show it
+    // Mobile: metadata is display:none; keep the scroll cue visible at rest
+    var cue = $('.scroll-cue');
+    if (cue) { cue.style.opacity = '1'; cue.style.pointerEvents = ''; cue.style.transform = 'none'; }
     var foot = $('.hero__foot');
     if (foot) { foot.style.opacity = '1'; foot.style.transform = 'none'; }
   }
@@ -1776,13 +1798,12 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         0.5)
       .to('#nav', { opacity: 1, duration: 0.9 }, 0.55);
 
-    // Desktop: meta/cue enter with the intro. Mobile: clear .js [data-rv] opacity:0
-    // so the foot progress reveal (paint) can show them; foot itself starts hidden.
+    // Desktop: meta + cue enter with the intro (unchanged).
+    // Mobile: metadata is CSS-removed; cue is visible at load and fades via paint().
     if (window.innerWidth >= 760) {
       tl.to([meta, cue].filter(Boolean), { autoAlpha: 1, duration: 1, stagger: 0.1 }, 0.7);
     } else {
-      if (meta) { meta.style.opacity = '1'; meta.style.transform = 'none'; }
-      if (cue) { cue.style.opacity = '1'; cue.style.transform = 'none'; }
+      if (cue) { cue.style.opacity = '1'; cue.style.pointerEvents = ''; cue.style.transform = 'none'; }
     }
 
     tl.add(function () { if (ST) ST.refresh(); });
@@ -2322,6 +2343,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
 
     var p = 0, target = 0, view = null, drift = 0, aim = 0;
     var isDesktopHero = window.innerWidth >= 760;
+    // Mobile metadata is CSS-hidden (display:none) so resize back to desktop restores it.
 
     function cut(v, a, b) { v = (v - a) / (b - a); return v < 0 ? 0 : v > 1 ? 1 : v; }
     function ease(v) { return v * v * (3 - 2 * v); }
@@ -2365,11 +2387,16 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         }
         wash.style.opacity = '0';
         hero.style.opacity = '1';
-        // Foot (meta + cue) reveals with early dolly progress, then fades at handoff
-        var metaReveal = ease(Math.max(0, Math.min(1, cut(v, 0.05, 0.2))));
-        var metaOut = ease(cut(v, 0.78, 0.92));
-        foot.style.opacity = (metaReveal * (1 - metaOut)).toFixed(3);
-        foot.style.transform = 'translate3d(0,' + ((1 - metaReveal) * 16).toFixed(1) + 'px,0)';
+        // Foot stays present for the cue only — no metadata reveal / spacing
+        foot.style.opacity = '1';
+        foot.style.transform = 'none';
+        // Scroll cue: visible at rest, fades out as soon as dolly engages
+        var cue = $('.scroll-cue');
+        if (cue) {
+          var cueOp = 1 - ease(cut(v, 0.015, 0.1));
+          cue.style.opacity = cueOp.toFixed(3);
+          cue.style.pointerEvents = cueOp <= 0.001 ? 'none' : '';
+        }
       }
       heroDolly.inside = v > 0.72;
       // Skip camera/fog updates once the desktop wash fully covers the canvas;
