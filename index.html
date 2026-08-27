@@ -1385,14 +1385,6 @@ section{position:relative;background:var(--bg);color:var(--fg);}
     </div>
   </div>
 
-  <div class="hero__foot shell">
-    <div class="hero__meta" id="heroMeta" data-rv="fade">
-      <span>Established 2009</span>
-      <span>Four residences represented</span>
-      <span>25.79° N / 80.13° W</span>
-    </div>
-    <div class="scroll-cue" data-rv="fade"><i aria-hidden="true"></i><span>Scroll</span></div>
-  </div>
 </section>
 </div>
 
@@ -2965,7 +2957,7 @@ section{position:relative;background:var(--bg);color:var(--fg);}
       inner.style.transform = 'translate3d(0,' + (-out * 7).toFixed(2) + 'vh,0)';
       media.style.setProperty('--veil', (1 - cut(v, 0.35, 0.82) * 0.94).toFixed(3));
       if (isDesktopHero) {
-        foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
+        if (foot) foot.style.opacity = (1 - cut(v, 0, 0.18)).toFixed(3);
         // Desktop: ivory wash lands as the camera settles (timing unchanged).
         // At wash ≥ ~1 the GL frame is fully covered — render is suspended in loop.
         wash.style.opacity = ease(cut(v, 0.84, 0.96)).toFixed(3);
@@ -2985,10 +2977,10 @@ section{position:relative;background:var(--bg);color:var(--fg);}
         }
         wash.style.opacity = '0';
         hero.style.opacity = '1';
-        // Foot stays present for the cue only — no metadata reveal / spacing
-        foot.style.opacity = '1';
-        foot.style.transform = 'none';
-        // Minimal cue: subtle at rest, gone almost immediately after engagement
+        if (foot) {
+          foot.style.opacity = '1';
+          foot.style.transform = 'none';
+        }
         var cue = $('.scroll-cue');
         if (cue) {
           var cueOp = 0.42 * (1 - ease(cut(v, 0.01, 0.07)));
